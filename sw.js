@@ -1,10 +1,10 @@
 const CACHE = 'librolibre-v1';
 const ASSETS = [
-  '/librolibre/',
-  '/librolibre/index.html',
-  '/librolibre/manifest.json',
-  '/librolibre/icons/icon-192.png',
-  '/librolibre/icons/icon-512.png',
+  '/Librolibre/',
+  '/Librolibre/index.html',
+  '/Librolibre/manifest.json',
+  '/Librolibre/icons/icon-192.png',
+  '/Librolibre/icons/icon-512.png',
 ];
 
 self.addEventListener('install', e => {
@@ -32,7 +32,7 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE).then(c => c.put(e.request, clone));
         }
         return res;
-      }).catch(() => caches.match('/librolibre/index.html'));
+      }).catch(() => caches.match('/Librolibre/index.html'));
     })
   );
 });
