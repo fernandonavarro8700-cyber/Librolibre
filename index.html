@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#2D6A4F" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="LibroLibre" />
+  <meta name="description" content="Lee tus documentos en cualquier formato: EPUB, PDF, MOBI, FB2 y más." />
+  <title>LibroLibre</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #F7F4EE;
+      --bg2:     #EDEAE2;
+      --bg3:     #ffffff;
+      --text:    #1C1C1C;
+      --text2:   #5A5A5A;
+      --accent:  #2D6A4F;
+      --accent2: #52B788;
+      --border:  rgba(0,0,0,0.10);
+      --card:    #ffffff;
+      --navbar:  #ffffff;
+      --tag:     #E1F5EE;
+      --tagtext: #0F6E56;
+      --radius:  12px;
+    }
+    body.dark {
+      --bg:      #0F1117;
+      --bg2:     #1A1A2E;
+      --bg3:     #16213E;
+      --text:    #E8E4D8;
+      --text2:   #8A8F9E;
+      --accent:  #52B788;
+      --accent2: #2D6A4F;
+      --border:  rgba(255,255,255,0.08);
+      --card:    #1A1A2E;
+      --navbar:  #0F1117;
+      --tag:     #085041;
+      --tagtext: #9FE1CB;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      transition: background 0.3s, color 0.3s;
+      overflow: hidden;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-width: 480px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ── SCREENS ── */
+    .screen {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+    }
+    .screen.active { display: flex; }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px 10px;
+      background: var(--navbar);
+      border-bottom: 0.5px solid var(--border);
+      flex-shrink: 0;
+    }
+    .topbar-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .logo-svg { width: 26px; height: 26px; }
+    .topbar-actions { display: flex; gap: 4px; }
+    .icon-btn {
+      background: none;
+      border: none;
+      color: var(--text2);
+      font-size: 22px;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      transition: background 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .icon-btn:active { background: var(--bg2); }
+
+    /* ── SCROLL CONTENT ── */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* ── NAV BAR ── */
+    .navbar {
+      display: flex;
+      background: var(--navbar);
+      border-top: 0.5px solid var(--border);
+      padding: 6px 0 max(6px, env(safe-area-inset-bottom));
+      flex-shrink: 0;
+    }
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      cursor: pointer;
+      padding: 4px 2px;
+      color: var(--text2);
+      font-size: 10px;
+      background: none;
+      border: none;
+      transition: color 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .nav-item svg { width: 24px; height: 24px; }
+    .nav-item.active { color: var(--accent); }
+
+    /* ── HERO BANNER ── */
+    .hero-banner {
+      background: var(--accent);
+      border-radius: var(--radius);
+      padding: 18px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .hero-cover {
+      width: 60px; height: 84px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 6px 2px 2px 6px;
+      border-left: 3px solid rgba(255,255,255,0.4);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .hero-cover svg { width: 30px; height: 30px; color: rgba(255,255,255,0.85); }
+    .hero-info { flex: 1; min-width: 0; }
+    .hero-label { font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 3px; }
+    .hero-title { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hero-author { font-size: 12px; color: rgba(255,255,255,0.75); margin-bottom: 10px; }
+    .progress-track { background: rgba(255,255,255,0.2); border-radius: 4px; height: 4px; margin-bottom: 8px; }
+    .progress-fill { background: #fff; border-radius: 4px; height: 4px; }
+    .hero-btn {
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+      border: 0.5px solid rgba(255,255,255,0.4);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* ── SECTION TITLE ── */
+    .section-title { font-size: 16px; font-weight: 600; color: var(--text); margin: 0 0 10px; }
+
+    /* ── BOOKS ROW ── */
+    .books-row {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .books-row::-webkit-scrollbar { display: none; }
+
+    .book-card { flex-shrink: 0; width: 100px; cursor: pointer; }
+    .book-cover {
+      width: 100px; height: 140px;
+      border-radius: 6px 3px 3px 6px;
+      background: var(--bg2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 34px;
+      margin-bottom: 6px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s;
+    }
+    .book-card:active .book-cover { transform: scale(0.97); }
+    .book-spine {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 5px;
+      border-radius: 6px 0 0 6px;
+    }
+    .book-info { font-size: 11px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ── FORMAT TAG ── */
+    .fmt-tag {
+      display: inline-block;
+      background: var(--tag);
+      color: var(--tagtext);
+      font-size: 9px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 4px;
+      margin-top: 3px;
+      letter-spacing: 0.3px;
+    }
+
+    /* ── COLLECTION GRID ── */
+    .col-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .col-card {
+      background: var(--card);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .col-card:active { background: var(--bg2); }
+    .col-card svg { width: 26px; height: 26px; color: var(--accent); margin-bottom: 6px; }
+    .col-card-title { font-size: 13px; font-weight: 500; color: var(--text); }
+    .col-card-sub { font-size: 11px; color: var(--text2); }
+
+    /* ── SEARCH ── */
+    .search-box {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg2);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      border: 0.5px solid var(--border);
+    }
+    .search-box svg { width: 18px; height: 18px; color: var(--text2); flex-shrink: 0; }
+    .search-box input {
+      background: none; border: none; outline: none;
+      font-size: 15px; color: var(--text); flex: 1;
+      font-family: inherit;
+    }
+    .search-box input::placeholder { color: var(--text2); }
+
+    /* ── FILTER CHIPS ── */
+    .filter-row {
+      display: flex; gap: 8px;
+      overflow-x: auto; padding-bottom: 4px;
+      scrollbar-width: none; margin-bottom: 14px;
+    }
+    .filter-row::-webkit-scrollbar { display: none; }
+    .chip {
+      flex-shrink: 0; padding: 5px 13px;
+      border-radius: 20px; font-size: 12px;
+      border: 0.5px solid var(--border);
+      background: var(--bg2); color: var(--text2);
+      cursor: pointer; transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* ── LIST BOOK ── */
+    .list-book {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0;
+      border-bottom: 0.5px solid var(--border);
+      cursor: pointer;
+    }
+    .list-cover {
+      width: 50px; height: 70px;
+      border-radius: 5px 2px 2px 5px;
+      background: var(--bg2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .list-spine {
+      position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    }
+    .list-info { flex: 1; min-width: 0; }
+    .list-title { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .list-author { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+    .list-chevron { color: var(--text2); flex-shrink: 0; }
+    .list-chevron svg { width: 18px; height: 18px; }
+
+    /* ── SETTINGS ── */
+    .settings-group { margin-bottom: 22px; }
+    .settings-label {
+      font-size: 11px; color: var(--text2); font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.6px;
+      margin-bottom: 8px; padding: 0 2px;
+    }
+    .settings-card {
+      background: var(--card); border-radius: var(--radius);
+      border: 0.5px solid var(--border); overflow: hidden;
+    }
+    .settings-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 0.5px solid var(--border);
+      cursor: pointer; transition: background 0.2s;
+    }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-row:active { background: var(--bg2); }
+    .settings-row-icon { color: var(--accent); flex-shrink: 0; }
+    .settings-row-icon svg { width: 22px; height: 22px; }
+    .settings-row-body { flex: 1; }
+    .settings-row-title { font-size: 14px; color: var(--text); }
+    .settings-row-sub { font-size: 12px; color: var(--text2); margin-top: 1px; }
+    .settings-row svg.chevron { width: 16px; height: 16px; color: var(--text2); }
+
+    /* ── TOGGLE ── */
+    .toggle {
+      width: 42px; height: 24px; border-radius: 12px;
+      background: var(--bg2); border: 0.5px solid var(--border);
+      position: relative; cursor: pointer;
+      transition: background 0.25s; flex-shrink: 0;
+    }
+    .toggle.on { background: var(--accent); border-color: var(--accent); }
+    .toggle-dot {
+      width: 20px; height: 20px; border-radius: 50%; background: #fff;
+      position: absolute; top: 2px; left: 2px;
+      transition: transform 0.25s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    }
+    .toggle.on .toggle-dot { transform: translateX(18px); }
+
+    /* ── LANG GRID ── */
+    .lang-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .lang-option {
+      background: var(--card); border: 0.5px solid var(--border);
+      border-radius: 10px; padding: 12px; text-align: center;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .lang-option.active { border-color: var(--accent); background: var(--tag); }
+    .lang-flag { font-size: 24px; margin-bottom: 4px; }
+    .lang-name { font-size: 13px; font-weight: 500; color: var(--text); }
+    .lang-code { font-size: 10px; color: var(--text2); }
+
+    /* ── DEV CARD ── */
+    .dev-card {
+      background: var(--card); border: 0.5px solid var(--border);
+      border-radius: var(--radius); padding: 16px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .dev-avatar {
+      width: 50px; height: 50px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 600; flex-shrink: 0;
+    }
+    .dev-name { font-size: 15px; font-weight: 600; color: var(--text); }
+    .dev-role { font-size: 12px; color: var(--text2); margin: 1px 0; }
+    .dev-mail { font-size: 12px; color: var(--accent); }
+    .app-version { font-size: 11px; color: var(--text2); text-align: center; padding: 10px 0 4px; }
+
+    /* ── FORMATOS BADGE WRAP ── */
+    .fmt-wrap { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 16px; }
+    .fmt-wrap .fmt-tag { font-size: 11px; padding: 4px 10px; }
+
+    /* ── READER ── */
+    .reader-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--navbar);
+      border-bottom: 0.5px solid var(--border);
+      flex-shrink: 0;
+    }
+    .reader-book-title { font-size: 14px; font-weight: 500; color: var(--text); flex: 1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0 8px; }
+    .read-progress-track { height: 3px; background: var(--bg2); flex-shrink: 0; }
+    .read-progress-fill { height: 3px; background: var(--accent); width: 35%; transition: width 0.5s; }
+    .reader-body {
+      flex: 1; padding: 22px 20px;
+      font-size: 17px; line-height: 1.85; color: var(--text);
+      font-family: Georgia, 'Times New Roman', serif;
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+    }
+    .reader-body p { margin-bottom: 1.3em; }
+    .reader-footer {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 16px max(10px, env(safe-area-inset-bottom));
+      background: var(--navbar); border-top: 0.5px solid var(--border);
+      flex-shrink: 0;
+    }
+    .page-info { flex: 1; text-align: center; font-size: 12px; color: var(--text2); }
+
+    /* ── FONT SIZE CONTROLS (reader) ── */
+    .reader-font-controls { display: flex; align-items: center; gap: 12px; }
+    .font-btn {
+      background: none; border: 0.5px solid var(--border);
+      border-radius: 6px; padding: 4px 10px;
+      font-size: 12px; color: var(--text2); cursor: pointer;
+    }
+
+    /* ── ADD MODAL ── */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: flex; align-items: flex-end; justify-content: center;
+      z-index: 200;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    .modal-backdrop.show { opacity: 1; pointer-events: all; }
+    .modal-sheet {
+      background: var(--bg); width: 100%;
+      border-radius: 18px 18px 0 0;
+      padding: 16px 16px max(20px, env(safe-area-inset-bottom));
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal-backdrop.show .modal-sheet { transform: translateY(0); }
+    .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+    .modal-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .modal-sub { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
+
+    .fmt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+    .fmt-item {
+      background: var(--bg2); border-radius: 10px;
+      padding: 12px 6px; text-align: center;
+      font-size: 11px; font-weight: 600; color: var(--text2);
+      border: 0.5px solid var(--border);
+      cursor: pointer; transition: all 0.2s;
+    }
+    .fmt-item:active { background: var(--tag); color: var(--tagtext); }
+    .fmt-item svg { width: 22px; height: 22px; color: var(--accent); display: block; margin: 0 auto 5px; }
+
+    .modal-actions { display: flex; gap: 10px; }
+    .btn-cancel {
+      flex: 1; padding: 13px; border-radius: 10px;
+      border: 0.5px solid var(--border); background: var(--bg2);
+      color: var(--text); font-size: 14px; cursor: pointer; font-family: inherit;
+    }
+    .btn-primary {
+      flex: 1; padding: 13px; border-radius: 10px;
+      border: none; background: var(--accent);
+      color: #fff; font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+    }
+
+    /* ── PERMISSION NOTICE ── */
+    .perm-notice {
+      background: var(--tag); color: var(--tagtext);
+      border-radius: 10px; padding: 12px 14px;
+      font-size: 12px; line-height: 1.5; margin-bottom: 16px;
+      display: flex; gap: 10px; align-items: flex-start;
+    }
+    .perm-notice svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── EMPTY STATE ── */
+    .empty-state { text-align: center; padding: 50px 24px; }
+    .empty-state svg { width: 52px; height: 52px; color: var(--border); margin-bottom: 14px; }
+    .empty-state p { font-size: 14px; color: var(--text2); }
+
+    /* INLINE SVG ICON HELPER */
+    svg.icon { display: inline-block; vertical-align: middle; }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ═══════════════════ PANTALLA: INICIO ═══════════════════ -->
+  <section class="screen active" id="screen-home" role="main" aria-label="Inicio">
+
+    <div class="topbar">
+      <div class="topbar-title">
+        <svg class="logo-svg" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+          <rect x="2" y="3" width="15" height="20" rx="2" fill="var(--accent)" opacity="0.2"/>
+          <rect x="5" y="3" width="15" height="20" rx="2" fill="var(--accent)" opacity="0.5"/>
+          <rect x="8" y="3" width="15" height="20" rx="2" fill="var(--accent)"/>
+          <line x1="11" y1="9" x2="20" y2="9" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="11" y1="13" x2="20" y2="13" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="11" y1="17" x2="17" y2="17" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        LibroLibre
+      </div>
+      <div class="topbar-actions">
+        <button class="icon-btn" onclick="openModal()" aria-label="Agregar libro">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button class="icon-btn" id="dark-btn" onclick="toggleDark()" aria-label="Modo oscuro">
+          <svg id="dark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Hero: último libro -->
+      <div class="hero-banner" id="hero-banner">
+        <div class="hero-cover">
+          <svg viewBox="0 0 30 30" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="width:30px;height:30px">
+            <path d="M4 4h10a6 6 0 0 1 6 6v14a4 4 0 0 0-4-4H4z"/><path d="M20 4h2a4 4 0 0 1 4 4v14a4 4 0 0 0-4-4h-2"/>
+          </svg>
+        </div>
+        <div class="hero-info">
+          <div class="hero-label">Seguir leyendo</div>
+          <div class="hero-title" id="hero-title">El Aleph</div>
+          <div class="hero-author" id="hero-author">Jorge Luis Borges · EPUB</div>
+          <div class="progress-track"><div class="progress-fill" id="hero-progress" style="width:62%"></div></div>
+          <button class="hero-btn" onclick="goScreen('reader')">Continuar lectura</button>
+        </div>
+      </div>
+
+      <div class="section-title">Agregados recientemente</div>
+      <div class="books-row" id="books-row">
+        <div class="book-card" onclick="goScreen('reader')">
+          <div class="book-cover"><div class="book-spine" style="background:#52B788"></div>📚</div>
+          <div class="book-info">Don Quijote</div>
+          <span class="fmt-tag">PDF</span>
+        </div>
+        <div class="book-card" onclick="goScreen('reader')">
+          <div class="book-cover"><div class="book-spine" style="background:#9FE1CB"></div>🔬</div>
+          <div class="book-info">Cosmos</div>
+          <span class="fmt-tag">EPUB</span>
+        </div>
+        <div class="book-card" onclick="goScreen('reader')">
+          <div class="book-cover"><div class="book-spine" style="background:#2D6A4F"></div>🎭</div>
+          <div class="book-info">Hamlet</div>
+          <span class="fmt-tag">MOBI</span>
+        </div>
+        <div class="book-card" onclick="goScreen('reader')">
+          <div class="book-cover"><div class="book-spine" style="background:#1D9E75"></div>🗺️</div>
+          <div class="book-info">Viaje al centro...</div>
+          <span class="fmt-tag">FB2</span>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:20px">Colecciones</div>
+      <div class="col-grid">
+        <div class="col-card" onclick="goScreen('library')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <div class="col-card-title">Mi biblioteca</div>
+          <div class="col-card-sub">4 documentos</div>
+        </div>
+        <div class="col-card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <div class="col-card-title">Favoritos</div>
+          <div class="col-card-sub">1 documento</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="navbar" role="navigation" aria-label="Navegación principal">
+      <button class="nav-item active" onclick="goScreen('home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Inicio
+      </button>
+      <button class="nav-item" onclick="goScreen('search')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Buscar
+      </button>
+      <button class="nav-item" onclick="goScreen('library')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Biblioteca
+      </button>
+      <button class="nav-item" onclick="goScreen('settings')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Ajustes
+      </button>
+    </nav>
+  </section>
+
+  <!-- ═══════════════════ PANTALLA: BUSCAR ═══════════════════ -->
+  <section class="screen" id="screen-search" aria-label="Buscar">
+    <div class="topbar">
+      <div class="topbar-title">Buscar</div>
+    </div>
+    <div class="content">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="search" id="search-input" placeholder="Título, autor o formato..." oninput="filterBooks()" />
+      </div>
+      <div class="filter-row" id="filter-row">
+        <div class="chip active" onclick="filterChip(this,'')">Todos</div>
+        <div class="chip" onclick="filterChip(this,'PDF')">PDF</div>
+        <div class="chip" onclick="filterChip(this,'EPUB')">EPUB</div>
+        <div class="chip" onclick="filterChip(this,'MOBI')">MOBI</div>
+        <div class="chip" onclick="filterChip(this,'FB2')">FB2</div>
+        <div class="chip" onclick="filterChip(this,'DOC')">DOC</div>
+        <div class="chip" onclick="filterChip(this,'TXT')">TXT</div>
+        <div class="chip" onclick="filterChip(this,'Comic')">Comic</div>
+      </div>
+      <div id="book-list">
+        <!-- generado por JS -->
+      </div>
+    </div>
+    <nav class="navbar" role="navigation" aria-label="Navegación principal">
+      <button class="nav-item" onclick="goScreen('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Inicio</button>
+      <button class="nav-item active" onclick="goScreen('search')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Buscar</button>
+      <button class="nav-item" onclick="goScreen('library')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Biblioteca</button>
+      <button class="nav-item" onclick="goScreen('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Ajustes</button>
+    </nav>
+  </section>
+
+  <!-- ═══════════════════ PANTALLA: BIBLIOTECA ═══════════════════ -->
+  <section class="screen" id="screen-library" aria-label="Biblioteca">
+    <div class="topbar">
+      <div class="topbar-title">Mi biblioteca</div>
+      <button class="icon-btn" onclick="openModal()" aria-label="Agregar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:22px;height:22px" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
+    <div class="content">
+      <div class="filter-row">
+        <div class="chip active">Todos</div>
+        <div class="chip">Leyendo</div>
+        <div class="chip">Terminados</div>
+        <div class="chip">Favoritos</div>
+      </div>
+      <div id="library-list"></div>
+    </div>
+    <nav class="navbar" role="navigation" aria-label="Navegación principal">
+      <button class="nav-item" onclick="goScreen('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Inicio</button>
+      <button class="nav-item" onclick="goScreen('search')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Buscar</button>
+      <button class="nav-item active" onclick="goScreen('library')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Biblioteca</button>
+      <button class="nav-item" onclick="goScreen('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Ajustes</button>
+    </nav>
+  </section>
+
+  <!-- ═══════════════════ PANTALLA: AJUSTES ═══════════════════ -->
+  <section class="screen" id="screen-settings" aria-label="Ajustes">
+    <div class="topbar">
+      <div class="topbar-title">Ajustes</div>
+    </div>
+    <div class="content">
+
+      <div class="settings-group">
+        <div class="settings-label">Apariencia</div>
+        <div class="settings-card">
+          <div class="settings-row" onclick="toggleDark()">
+            <div class="settings-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div>
+            <div class="settings-row-body">
+              <div class="settings-row-title">Modo oscuro</div>
+              <div class="settings-row-sub" id="dark-sub-settings">Desactivado</div>
+            </div>
+            <div class="toggle" id="toggle-dark" onclick="event.stopPropagation();toggleDark()"><div class="toggle-dot"></div></div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></div>
+            <div class="settings-row-body">
+              <div class="settings-row-title">Tamaño de fuente</div>
+              <div class="settings-row-sub">Mediana (17 px)</div>
+            </div>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></div>
+            <div class="settings-row-body">
+              <div class="settings-row-title">Interlineado</div>
+              <div class="settings-row-sub">Normal (1.85)</div>
+            </div>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-label">Idioma de la interfaz</div>
+        <div class="lang-grid">
+          <div class="lang-option active" onclick="selectLang(this)"><div class="lang-flag">🇪🇸</div><div class="lang-name">Español</div><div class="lang-code">ES</div></div>
+          <div class="lang-option" onclick="selectLang(this)"><div class="lang-flag">🇺🇸</div><div class="lang-name">English</div><div class="lang-code">EN</div></div>
+          <div class="lang-option" onclick="selectLang(this)"><div class="lang-flag">🇧🇷</div><div class="lang-name">Português</div><div class="lang-code">PT</div></div>
+          <div class="lang-option" onclick="selectLang(this)"><div class="lang-flag">🇫🇷</div><div class="lang-name">Français</div><div class="lang-code">FR</div></div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-label">Lectura y almacenamiento</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></div>
+            <div class="settings-row-body">
+              <div class="settings-row-title">Guardar posición automáticamente</div>
+              <div class="settings-row-sub">Activado</div>
+            </div>
+            <div class="toggle on"><div class="toggle-dot"></div></div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+            <div class="settings-row-body">
+              <div class="settings-row-title">Permiso de almacenamiento</div>
+              <div class="settings-row-sub" id="perm-status">Verificando…</div>
+            </div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" style="width:18px;height:18px" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-label">Formatos compatibles</div>
+        <div class="settings-card">
+          <div class="fmt-wrap">
+            <span class="fmt-tag">EPUB / EPUB3</span>
+            <span class="fmt-tag">PDF</span>
+            <span class="fmt-tag">MOBI</span>
+            <span class="fmt-tag">AZW / AZW3</span>
+            <span class="fmt-tag">TPZ</span>
+            <span class="fmt-tag">PCR</span>
+            <span class="fmt-tag">FB2</span>
+            <span class="fmt-tag">LIT</span>
+            <span class="fmt-tag">HTML</span>
+            <span class="fmt-tag">TXT</span>
+            <span class="fmt-tag">DOC / DOCX</span>
+            <span class="fmt-tag">CBR / CBZ / CBA</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-label">Desarrollador</div>
+        <div class="dev-card">
+          <div class="dev-avatar">FN</div>
+          <div>
+            <div class="dev-name">Fernando Navarro</div>
+            <div class="dev-role">Desarrollador independiente</div>
+            <div class="dev-mail">fernandonavarro8700@gmail.com</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="app-version">LibroLibre v1.0.0 · © 2025 Fernando Navarro</div>
+    </div>
+    <nav class="navbar" role="navigation" aria-label="Navegación principal">
+      <button class="nav-item" onclick="goScreen('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Inicio</button>
+      <button class="nav-item" onclick="goScreen('search')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Buscar</button>
+      <button class="nav-item" onclick="goScreen('library')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Biblioteca</button>
+      <button class="nav-item active" onclick="goScreen('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Ajustes</button>
+    </nav>
+  </section>
+
+  <!-- ═══════════════════ PANTALLA: LECTOR ═══════════════════ -->
+  <section class="screen" id="screen-reader" aria-label="Lector">
+    <div class="reader-topbar">
+      <button class="icon-btn" onclick="goScreen('library')" aria-label="Volver">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:22px;height:22px" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="reader-book-title" id="reader-title">El Aleph · Borges</div>
+      <div style="display:flex;gap:4px">
+        <button class="icon-btn" aria-label="Marcador">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:22px;height:22px" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        </button>
+        <button class="icon-btn" aria-label="Opciones">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:22px;height:22px" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="read-progress-track"><div class="read-progress-fill" id="reader-progress"></div></div>
+    <div class="reader-body" id="reader-body">
+      <p>En la candente mañana de febrero en que Beatriz Viterbo murió, después de una imperiosa agonía que no se rebajó un solo momento ni al sentimentalismo ni al miedo, noté que las carretillas de fierro de la Plaza Constitución habían renovado no sé qué aviso de cigarrillos rubios.</p>
+      <p>El hecho me dolió, pues comprendí que el incesante y vasto universo ya se apartaba de ella y que ese cambio era el primero de una serie infinita.</p>
+      <p>El universo (que otros llaman la Biblioteca) se compone de un número indefinido, y tal vez infinito, de galerías hexagonales, con vastos pozos de ventilación en el medio, cercados por barandas bajísimas.</p>
+      <p>Desde cualquier hexágono se ven los pisos inferiores y superiores: interminablemente. La distribución de las galerías es invariable.</p>
+    </div>
+    <div class="reader-footer">
+      <button class="icon-btn" onclick="prevPage()" aria-label="Página anterior">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:22px;height:22px" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="page-info" id="page-info">Pág. 3 de 42 · 35% leído</div>
+      <button class="icon-btn" onclick="nextPage()" aria-label="Página siguiente">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:22px;height:22px" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ MODAL: AGREGAR ═══════════════════ -->
+  <div class="modal-backdrop" id="modal" onclick="closeModalOutside(event)" role="dialog" aria-modal="true" aria-label="Agregar documento">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Abrir un documento</div>
+      <div class="modal-sub">Seleccioná el formato del archivo</div>
+      <div class="perm-notice">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:18px;height:18px;flex-shrink:0" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        La app necesitará permiso para acceder a los archivos de tu dispositivo. Se pedirá al abrir el primer documento.
+      </div>
+      <div class="fmt-grid">
+        <div class="fmt-item" onclick="pickFile('epub')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>EPUB</div>
+        <div class="fmt-item" onclick="pickFile('pdf')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>PDF</div>
+        <div class="fmt-item" onclick="pickFile('mobi')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>MOBI</div>
+        <div class="fmt-item" onclick="pickFile('azw')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>AZW</div>
+        <div class="fmt-item" onclick="pickFile('fb2')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>FB2</div>
+        <div class="fmt-item" onclick="pickFile('txt')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>TXT</div>
+        <div class="fmt-item" onclick="pickFile('doc')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>DOC/X</div>
+        <div class="fmt-item" onclick="pickFile('html')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>HTML</div>
+        <div class="fmt-item" onclick="pickFile('cbr')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>CBR/Z</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+        <button class="btn-primary" onclick="pickFile('any')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:16px;height:16px;vertical-align:-2px;margin-right:5px" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Explorar archivos
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── DATOS DE EJEMPLO ──
+  const BOOKS = [
+    { emoji:'📚', title:'Don Quijote de la Mancha', author:'Miguel de Cervantes', fmt:'PDF', progress:62, spine:'#52B788' },
+    { emoji:'🔬', title:'Cosmos', author:'Carl Sagan', fmt:'EPUB', progress:35, spine:'#9FE1CB' },
+    { emoji:'🎭', title:'Hamlet', author:'William Shakespeare', fmt:'MOBI', progress:0, spine:'#2D6A4F' },
+    { emoji:'🗺️', title:'Viaje al centro de la Tierra', author:'Jules Verne', fmt:'FB2', progress:10, spine:'#1D9E75' },
+  ];
+
+  // ── NAVEGACIÓN ──
+  function goScreen(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + name).classList.add('active');
+    updateNav(name);
+    if (name === 'search' || name === 'library') renderBooks(name);
+  }
+
+  function updateNav(name) {
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#screen-' + name + ' .nav-item').forEach((b,i,a) => {
+      const names = ['home','search','library','settings'];
+      a.forEach((btn, idx) => { if (names[idx] === name) btn.classList.add('active'); });
+    });
+  }
+
+  // ── RENDER LISTAS ──
+  function bookItemHTML(b, onclick) {
+    const pct = b.progress;
+    return `<div class="list-book" onclick="${onclick}">
+      <div class="list-cover"><div class="list-spine" style="background:${b.spine}"></div>${b.emoji}</div>
+      <div class="list-info">
+        <div class="list-title">${b.title}</div>
+        <div class="list-author">${b.author}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="fmt-tag">${b.fmt}</span>
+          <span style="font-size:11px;color:var(--text2)">${pct > 0 ? '· ' + pct + '% leído' : '· Sin empezar'}</span>
+        </div>
+      </div>
+      <div class="list-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </div>`;
+  }
+
+  let activeFilter = '';
+  function renderBooks(screen) {
+    const q = (document.getElementById('search-input') || {value:''}).value.toLowerCase();
+    const filtered = BOOKS.filter(b => {
+      const matchQ = !q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q) || b.fmt.toLowerCase().includes(q);
+      const matchF = !activeFilter || b.fmt === activeFilter || (activeFilter === 'Comic' && ['CBR','CBZ','CBA'].includes(b.fmt));
+      return matchQ && matchF;
+    });
+    const target = document.getElementById(screen === 'search' ? 'book-list' : 'library-list');
+    if (!target) return;
+    if (!filtered.length) {
+      target.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><p>No hay documentos que coincidan</p></div>`;
+      return;
+    }
+    target.innerHTML = filtered.map(b => bookItemHTML(b, "goScreen('reader')")).join('');
+  }
+
+  function filterBooks() { renderBooks('search'); }
+
+  function filterChip(el, fmt) {
+    document.querySelectorAll('#filter-row .chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    activeFilter = fmt;
+    renderBooks('search');
+  }
+
+  // ── MODO OSCURO ──
+  let isDark = false;
+  function toggleDark() {
+    isDark = !isDark;
+    document.body.classList.toggle('dark', isDark);
+    document.getElementById('toggle-dark').classList.toggle('on', isDark);
+    document.getElementById('dark-sub-settings').textContent = isDark ? 'Activado' : 'Desactivado';
+    const icon = document.getElementById('dark-icon');
+    icon.innerHTML = isDark
+      ? '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>'
+      : '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+    localStorage.setItem('librolibre_dark', isDark ? '1' : '0');
+  }
+
+  // ── IDIOMA ──
+  function selectLang(el) {
+    document.querySelectorAll('.lang-option').forEach(o => o.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  // ── MODAL ──
+  function openModal() {
+    const m = document.getElementById('modal');
+    m.style.display = 'flex';
+    requestAnimationFrame(() => m.classList.add('show'));
+  }
+  function closeModal() {
+    const m = document.getElementById('modal');
+    m.classList.remove('show');
+    setTimeout(() => { m.style.display = 'none'; }, 300);
+  }
+  function closeModalOutside(e) {
+    if (e.target === document.getElementById('modal')) closeModal();
+  }
+
+  // ── LECTOR: paginación demo ──
+  let currentPage = 3;
+  const totalPages = 42;
+  function updatePageInfo() {
+    const pct = Math.round((currentPage / totalPages) * 100);
+    document.getElementById('page-info').textContent = `Pág. ${currentPage} de ${totalPages} · ${pct}% leído`;
+    document.getElementById('reader-progress').style.width = pct + '%';
+  }
+  function nextPage() { if (currentPage < totalPages) { currentPage++; updatePageInfo(); } }
+  function prevPage() { if (currentPage > 1) { currentPage--; updatePageInfo(); } }
+
+  // ── PICKER DE ARCHIVOS (demo) ──
+  function pickFile(fmt) {
+    closeModal();
+    const accept = {
+      epub: '.epub', pdf: '.pdf', mobi: '.mobi', azw: '.azw,.azw3,.tpz,.pcr',
+      fb2: '.fb2', txt: '.txt', doc: '.doc,.docx', html: '.html,.htm',
+      cbr: '.cbr,.cbz,.cba', any: '.epub,.pdf,.mobi,.azw,.azw3,.fb2,.lit,.html,.txt,.doc,.docx,.cbr,.cbz,.cba,.tpz,.pcr'
+    }[fmt] || '*';
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = accept;
+    input.onchange = e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      document.getElementById('reader-title').textContent = file.name;
+      goScreen('reader');
+    };
+    input.click();
+  }
+
+  // ── PERMISO ALMACENAMIENTO ──
+  async function checkStoragePermission() {
+    try {
+      if (navigator.permissions) {
+        const res = await navigator.permissions.query({ name: 'persistent-storage' });
+        document.getElementById('perm-status').textContent =
+          res.state === 'granted' ? 'Concedido' : 'Se pedirá al abrir un archivo';
+      } else {
+        document.getElementById('perm-status').textContent = 'Compatible';
+      }
+    } catch { document.getElementById('perm-status').textContent = 'Compatible'; }
+  }
+
+  // ── INIT ──
+  window.addEventListener('DOMContentLoaded', () => {
+    if (localStorage.getItem('librolibre_dark') === '1') toggleDark();
+    checkStoragePermission();
+    renderBooks('search');
+    renderBooks('library');
+  });
+</script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/librolibre/sw.js")
+        .catch(err => console.warn("SW:", err));
+    });
+  }
+</script>
+</body>
+</html>

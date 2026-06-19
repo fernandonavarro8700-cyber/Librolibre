@@ -1,0 +1,37 @@
+{
+  "name": "LibroLibre",
+  "short_name": "LibroLibre",
+  "description": "Lee tus documentos en cualquier formato: EPUB, PDF, MOBI, FB2 y más.",
+  "start_url": "/librolibre/",
+  "scope": "/librolibre/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7F4EE",
+  "theme_color": "#2D6A4F",
+  "lang": "es",
+  "categories": ["books", "utilities", "education"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Mi biblioteca",
+      "short_name": "Biblioteca",
+      "description": "Ver todos mis libros",
+      "url": "/librolibre/#library",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
