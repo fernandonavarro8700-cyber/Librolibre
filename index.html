@@ -1,1089 +1,1165 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#2D6A4F" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="LibroLibre" />
-  <meta name="description" content="Lee tus documentos en cualquier formato: EPUB, PDF, MOBI, FB2 y más." />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <meta name="theme-color" content="#7C3AED"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-title" content="LibroLibre"/>
+  <meta name="description" content="Lee tus documentos en cualquier formato."/>
   <title>LibroLibre</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="icons/icon-192.png" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
-
-  <!-- Librerías para leer formatos -->
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" href="icons/icon-192.png"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-    :root {
-      --bg: #F7F4EE; --bg2: #EDEAE2; --bg3: #ffffff;
-      --text: #1C1C1C; --text2: #5A5A5A;
-      --accent: #2D6A4F; --accent2: #52B788;
-      --border: rgba(0,0,0,0.10);
-      --card: #ffffff; --navbar: #ffffff;
-      --tag: #E1F5EE; --tagtext: #0F6E56;
-      --nav-h: 62px;
-    }
-    body.dark {
-      --bg: #0F1117; --bg2: #1A1A2E; --bg3: #16213E;
-      --text: #E8E4D8; --text2: #8A8F9E;
-      --accent: #52B788; --accent2: #2D6A4F;
-      --border: rgba(255,255,255,0.08);
-      --card: #1A1A2E; --navbar: #0F1117;
-      --tag: #085041; --tagtext: #9FE1CB;
+    :root{
+      --bg:      #0D0D1A;
+      --bg2:     #1A1A2E;
+      --bg3:     #16213E;
+      --card:    #1E1E32;
+      --navbar:  #0D0D1A;
+      --text:    #E8E4D8;
+      --text2:   #9090B0;
+      --accent:  #7C3AED;
+      --accent2: #A78BFA;
+      --border:  rgba(124,58,237,0.18);
+      --tag:     rgba(124,58,237,0.18);
+      --tagtext: #A78BFA;
+      --nav-h:   62px;
     }
 
-    html, body {
-      height: 100%; width: 100%;
-      background: var(--bg); color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      overflow: hidden;
-      -webkit-tap-highlight-color: transparent;
+    html,body{
+      height:100%;width:100%;
+      background:var(--bg);color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+      overflow:hidden;
+      -webkit-tap-highlight-color:transparent;
     }
-
-    #app {
-      display: flex; flex-direction: column;
-      height: 100vh; width: 100%;
-      max-width: 540px; margin: 0 auto;
-      position: relative; overflow: hidden;
-      background: var(--bg);
+    #app{
+      display:flex;flex-direction:column;
+      height:100vh;width:100%;max-width:540px;
+      margin:0 auto;position:relative;overflow:hidden;
+      background:var(--bg);
     }
 
     /* ── SCREENS ── */
-    .screen {
-      display: none; flex-direction: column;
-      flex: 1; overflow: hidden;
-      /* deja espacio fijo para el navbar */
-      padding-bottom: var(--nav-h);
-    }
-    .screen.active { display: flex; }
+    .screen{display:none;flex-direction:column;flex:1;overflow:hidden;padding-bottom:var(--nav-h)}
+    .screen.active{display:flex}
 
     /* ── TOPBAR ── */
-    .topbar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 16px 10px;
-      background: var(--navbar);
-      border-bottom: 0.5px solid var(--border);
-      flex-shrink: 0;
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:14px 16px 10px;
+      background:var(--navbar);
+      border-bottom:0.5px solid var(--border);
+      flex-shrink:0;
     }
-    .topbar-title {
-      font-size: 20px; font-weight: 700; color: var(--text);
-      display: flex; align-items: center; gap: 8px;
+    .topbar-title{
+      font-size:20px;font-weight:700;color:var(--text);
+      display:flex;align-items:center;gap:8px;
     }
-    .topbar-actions { display: flex; gap: 4px; }
-    .icon-btn {
-      background: none; border: none; color: var(--text2);
-      cursor: pointer; padding: 7px; border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      transition: background 0.15s;
+    /* Logo igual que Palabra Diaria: cuadrado redondeado violeta con ✦ */
+    .app-logo{
+      width:32px;height:32px;border-radius:8px;
+      background:var(--accent);
+      display:flex;align-items:center;justify-content:center;
+      font-size:16px;color:#fff;flex-shrink:0;
     }
-    .icon-btn:active { background: var(--bg2); }
-    .icon-btn svg { width: 22px; height: 22px; }
+    .topbar-actions{display:flex;gap:4px}
+    .icon-btn{
+      background:none;border:none;color:var(--text2);
+      cursor:pointer;padding:7px;border-radius:8px;
+      display:flex;align-items:center;justify-content:center;
+      transition:background 0.15s;
+    }
+    .icon-btn:active{background:var(--bg2)}
+    .icon-btn svg{width:22px;height:22px}
 
-    /* ── SCROLL CONTENT ── */
-    .content {
-      flex: 1; overflow-y: auto; padding: 16px;
-      -webkit-overflow-scrolling: touch;
-    }
+    /* ── CONTENT ── */
+    .content{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
 
-    /* ── NAVBAR FIJO ABAJO ── */
-    .navbar {
-      position: fixed; bottom: 0; left: 50%; 
-      transform: translateX(-50%);
-      width: 100%; max-width: 540px;
-      display: flex;
-      background: var(--navbar);
-      border-top: 1px solid var(--border);
-      height: var(--nav-h);
-      padding-bottom: env(safe-area-inset-bottom, 0px);
-      z-index: 999;
+    /* ── NAVBAR FIJO ── */
+    .navbar{
+      position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+      width:100%;max-width:540px;
+      display:flex;background:var(--navbar);
+      border-top:0.5px solid var(--border);
+      height:var(--nav-h);
+      padding-bottom:env(safe-area-inset-bottom,0px);
+      z-index:999;
     }
-    .nav-item {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 3px; cursor: pointer;
-      color: var(--text2); font-size: 10px; font-weight: 500;
-      background: none; border: none;
-      padding: 6px 2px;
-      transition: color 0.15s;
-      -webkit-tap-highlight-color: transparent;
+    .nav-item{
+      flex:1;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;
+      gap:3px;cursor:pointer;
+      color:var(--text2);font-size:10px;font-weight:500;
+      background:none;border:none;padding:6px 2px;
+      transition:color 0.15s;
+      -webkit-tap-highlight-color:transparent;
     }
-    .nav-item svg { width: 24px; height: 24px; }
-    .nav-item.active { color: var(--accent); }
-    .nav-item.active svg { stroke: var(--accent); }
+    .nav-item svg{width:22px;height:22px}
+    .nav-item.active{color:var(--accent)}
+    .nav-item.active svg{stroke:var(--accent)}
 
     /* ── SECTION TITLE ── */
-    .section-title { font-size: 16px; font-weight: 600; color: var(--text); margin: 0 0 12px; }
+    .section-title{font-size:11px;font-weight:700;color:var(--text2);
+      text-transform:uppercase;letter-spacing:0.7px;margin:0 0 10px}
 
-    /* ── HERO BANNER ── */
-    .hero-banner {
-      background: var(--accent); border-radius: 14px;
-      padding: 18px 16px; display: flex;
-      align-items: center; gap: 14px; margin-bottom: 22px;
+    /* ── HERO ── */
+    .hero-banner{
+      background:var(--card);border:0.5px solid var(--border);
+      border-radius:16px;padding:18px 16px;
+      display:flex;align-items:center;gap:14px;margin-bottom:22px;
+      position:relative;overflow:hidden;
     }
-    .hero-cover {
-      width: 60px; height: 84px;
-      background: rgba(255,255,255,0.15);
-      border-radius: 6px 2px 2px 6px;
-      border-left: 3px solid rgba(255,255,255,0.4);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; font-size: 28px;
+    .hero-banner::before{
+      content:'';position:absolute;top:-20px;right:-20px;
+      width:100px;height:100px;border-radius:50%;
+      background:rgba(124,58,237,0.12);
     }
-    .hero-info { flex: 1; min-width: 0; }
-    .hero-label { font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 3px; }
-    .hero-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .hero-author { font-size: 12px; color: rgba(255,255,255,0.75); margin-bottom: 10px; }
-    .progress-track { background: rgba(255,255,255,0.2); border-radius: 4px; height: 4px; margin-bottom: 8px; }
-    .progress-fill { background: #fff; border-radius: 4px; height: 4px; }
-    .hero-btn {
-      background: rgba(255,255,255,0.2); color: #fff;
-      border: 0.5px solid rgba(255,255,255,0.5);
-      border-radius: 20px; padding: 6px 16px;
-      font-size: 12px; font-weight: 500; cursor: pointer;
+    .hero-cover{
+      width:58px;height:80px;
+      background:var(--bg2);
+      border-radius:6px 2px 2px 6px;
+      border-left:3px solid var(--accent);
+      display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;font-size:26px;
+    }
+    .hero-info{flex:1;min-width:0}
+    .hero-label{font-size:10px;color:var(--accent2);margin-bottom:3px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+    .hero-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .hero-author{font-size:12px;color:var(--text2);margin-bottom:10px}
+    .progress-track{background:var(--bg2);border-radius:4px;height:4px;margin-bottom:8px}
+    .progress-fill{background:var(--accent);border-radius:4px;height:4px;transition:width 0.4s}
+    .hero-btn{
+      background:var(--accent);color:#fff;border:none;
+      border-radius:20px;padding:6px 16px;
+      font-size:12px;font-weight:600;cursor:pointer;
     }
 
-    /* ── BOOKS ROW ── */
-    .books-row {
-      display: flex; gap: 12px; overflow-x: auto;
-      padding-bottom: 10px; scrollbar-width: none;
-      -webkit-overflow-scrolling: touch;
+    /* ── BOOK CARDS ── */
+    .books-row{
+      display:flex;gap:12px;overflow-x:auto;
+      padding-bottom:10px;scrollbar-width:none;
+      -webkit-overflow-scrolling:touch;
     }
-    .books-row::-webkit-scrollbar { display: none; }
-    .book-card { flex-shrink: 0; width: 95px; cursor: pointer; }
-    .book-cover {
-      width: 95px; height: 132px;
-      border-radius: 5px 3px 3px 5px;
-      background: var(--bg2);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 30px; margin-bottom: 6px;
-      position: relative; overflow: hidden;
-      transition: transform 0.15s;
+    .books-row::-webkit-scrollbar{display:none}
+    .book-card{flex-shrink:0;width:90px;cursor:pointer}
+    .book-cover{
+      width:90px;height:126px;
+      border-radius:6px 3px 3px 6px;
+      background:var(--card);
+      display:flex;align-items:center;justify-content:center;
+      font-size:28px;margin-bottom:6px;
+      position:relative;overflow:hidden;
+      border:0.5px solid var(--border);
+      transition:transform 0.15s;
     }
-    .book-card:active .book-cover { transform: scale(0.96); }
-    .book-spine { position: absolute; left:0; top:0; bottom:0; width:5px; }
-    .book-info { font-size: 11px; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .fmt-tag {
-      display: inline-block; background: var(--tag); color: var(--tagtext);
-      font-size: 9px; font-weight: 700; padding: 2px 7px;
-      border-radius: 4px; margin-top: 3px; letter-spacing: 0.3px;
+    .book-card:active .book-cover{transform:scale(0.96)}
+    .book-spine{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+    .book-info{font-size:11px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .fmt-tag{
+      display:inline-block;background:var(--tag);color:var(--tagtext);
+      font-size:9px;font-weight:700;padding:2px 7px;
+      border-radius:4px;margin-top:3px;letter-spacing:0.3px;
     }
 
     /* ── COL GRID ── */
-    .col-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-    .col-card {
-      background: var(--card); border: 0.5px solid var(--border);
-      border-radius: 12px; padding: 14px; cursor: pointer;
-      transition: background 0.15s;
+    .col-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+    .col-card{
+      background:var(--card);border:0.5px solid var(--border);
+      border-radius:14px;padding:14px;cursor:pointer;transition:background 0.15s;
     }
-    .col-card:active { background: var(--bg2); }
-    .col-card svg { width: 26px; height: 26px; color: var(--accent); margin-bottom: 6px; display: block; }
-    .col-card-title { font-size: 13px; font-weight: 600; color: var(--text); }
-    .col-card-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+    .col-card:active{background:var(--bg2)}
+    .col-card svg{width:24px;height:24px;color:var(--accent);margin-bottom:6px;display:block}
+    .col-card-title{font-size:13px;font-weight:600;color:var(--text)}
+    .col-card-sub{font-size:11px;color:var(--text2);margin-top:2px}
 
-    /* ── FILTER CHIPS ── */
-    .filter-row {
-      display: flex; gap: 8px; overflow-x: auto;
-      padding-bottom: 4px; scrollbar-width: none; margin-bottom: 14px;
+    /* ── CHIPS ── */
+    .filter-row{
+      display:flex;gap:8px;overflow-x:auto;
+      padding-bottom:4px;scrollbar-width:none;margin-bottom:14px;
     }
-    .filter-row::-webkit-scrollbar { display: none; }
-    .chip {
-      flex-shrink: 0; padding: 6px 14px; border-radius: 20px;
-      font-size: 12px; font-weight: 500;
-      border: 0.5px solid var(--border);
-      background: var(--bg2); color: var(--text2);
-      cursor: pointer; transition: all 0.15s;
-      white-space: nowrap;
+    .filter-row::-webkit-scrollbar{display:none}
+    .chip{
+      flex-shrink:0;padding:6px 14px;border-radius:20px;
+      font-size:12px;font-weight:600;
+      border:1px solid var(--border);
+      background:var(--card);color:var(--text2);
+      cursor:pointer;transition:all 0.15s;white-space:nowrap;
     }
-    .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 
-    /* ── SEARCH BOX ── */
-    .search-box {
-      display: flex; align-items: center; gap: 8px;
-      background: var(--bg2); border-radius: 10px;
-      padding: 11px 14px; margin-bottom: 14px;
-      border: 0.5px solid var(--border);
+    /* ── SEARCH ── */
+    .search-box{
+      display:flex;align-items:center;gap:8px;
+      background:var(--card);border-radius:12px;
+      padding:11px 14px;margin-bottom:14px;
+      border:0.5px solid var(--border);
     }
-    .search-box svg { width: 18px; height: 18px; color: var(--text2); flex-shrink: 0; }
-    .search-box input {
-      background: none; border: none; outline: none;
-      font-size: 15px; color: var(--text); flex: 1; font-family: inherit;
+    .search-box svg{width:18px;height:18px;color:var(--text2);flex-shrink:0}
+    .search-box input{
+      background:none;border:none;outline:none;
+      font-size:15px;color:var(--text);flex:1;font-family:inherit;
     }
-    .search-box input::placeholder { color: var(--text2); }
+    .search-box input::placeholder{color:var(--text2)}
 
     /* ── LIST BOOK ── */
-    .list-book {
-      display: flex; align-items: center; gap: 12px;
-      padding: 13px 0; border-bottom: 0.5px solid var(--border);
-      cursor: pointer; transition: background 0.1s;
+    .list-book{
+      display:flex;align-items:center;gap:12px;
+      padding:13px 0;border-bottom:0.5px solid var(--border);
+      cursor:pointer;
     }
-    .list-book:active { background: var(--bg2); margin: 0 -16px; padding: 13px 16px; }
-    .list-cover {
-      width: 50px; height: 70px; border-radius: 5px 2px 2px 5px;
-      background: var(--bg2);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 24px; flex-shrink: 0; position: relative; overflow: hidden;
+    .list-book:active{opacity:0.7}
+    .list-cover{
+      width:48px;height:66px;border-radius:5px 2px 2px 5px;
+      background:var(--card);border:0.5px solid var(--border);
+      display:flex;align-items:center;justify-content:center;
+      font-size:22px;flex-shrink:0;position:relative;overflow:hidden;
     }
-    .list-spine { position: absolute; left:0; top:0; bottom:0; width:4px; }
-    .list-info { flex: 1; min-width: 0; }
-    .list-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .list-author { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
-    .chevron-icon { color: var(--text2); flex-shrink: 0; }
-    .chevron-icon svg { width: 16px; height: 16px; }
+    .list-spine{position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+    .list-info{flex:1;min-width:0}
+    .list-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .list-author{font-size:12px;color:var(--text2);margin-bottom:4px}
+    .chevron svg{width:16px;height:16px;color:var(--text2)}
 
     /* ── SETTINGS ── */
-    .settings-group { margin-bottom: 22px; }
-    .settings-label {
-      font-size: 11px; color: var(--text2); font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.6px;
-      margin-bottom: 8px; padding: 0 2px;
+    .settings-group{margin-bottom:22px}
+    .settings-label{font-size:11px;color:var(--text2);font-weight:700;text-transform:uppercase;letter-spacing:0.7px;margin-bottom:8px;padding:0 2px}
+    .settings-card{background:var(--card);border-radius:14px;border:0.5px solid var(--border);overflow:hidden}
+    .settings-row{
+      display:flex;align-items:center;gap:12px;
+      padding:14px 16px;border-bottom:0.5px solid var(--border);
+      cursor:pointer;transition:background 0.15s;
     }
-    .settings-card { background: var(--card); border-radius: 12px; border: 0.5px solid var(--border); overflow: hidden; }
-    .settings-row {
-      display: flex; align-items: center; gap: 12px;
-      padding: 14px 16px; border-bottom: 0.5px solid var(--border);
-      cursor: pointer; transition: background 0.15s;
-    }
-    .settings-row:last-child { border-bottom: none; }
-    .settings-row:active { background: var(--bg2); }
-    .settings-icon { color: var(--accent); flex-shrink: 0; }
-    .settings-icon svg { width: 22px; height: 22px; }
-    .settings-body { flex: 1; }
-    .settings-row-title { font-size: 14px; color: var(--text); }
-    .settings-row-sub { font-size: 12px; color: var(--text2); margin-top: 1px; }
+    .settings-row:last-child{border-bottom:none}
+    .settings-row:active{background:var(--bg2)}
+    .settings-icon{color:var(--accent);flex-shrink:0}
+    .settings-icon svg{width:22px;height:22px}
+    .settings-body{flex:1}
+    .settings-row-title{font-size:14px;color:var(--text)}
+    .settings-row-sub{font-size:12px;color:var(--text2);margin-top:1px}
 
     /* ── TOGGLE ── */
-    .toggle {
-      width: 44px; height: 26px; border-radius: 13px;
-      background: var(--bg2); border: 0.5px solid var(--border);
-      position: relative; cursor: pointer; transition: background 0.25s; flex-shrink: 0;
+    .toggle{
+      width:44px;height:26px;border-radius:13px;
+      background:var(--bg2);border:0.5px solid var(--border);
+      position:relative;cursor:pointer;transition:background 0.25s;flex-shrink:0;
     }
-    .toggle.on { background: var(--accent); border-color: var(--accent); }
-    .toggle-dot {
-      width: 22px; height: 22px; border-radius: 50%; background: #fff;
-      position: absolute; top: 2px; left: 2px;
-      transition: transform 0.25s; box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    .toggle.on{background:var(--accent);border-color:var(--accent)}
+    .toggle-dot{
+      width:22px;height:22px;border-radius:50%;background:#fff;
+      position:absolute;top:2px;left:2px;
+      transition:transform 0.25s;box-shadow:0 1px 4px rgba(0,0,0,0.4);
     }
-    .toggle.on .toggle-dot { transform: translateX(18px); }
+    .toggle.on .toggle-dot{transform:translateX(18px)}
 
-    /* ── LANG GRID ── */
-    .lang-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .lang-option {
-      background: var(--card); border: 0.5px solid var(--border);
-      border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.15s;
+    /* ── LANG CHIPS (igual que Palabra Diaria) ── */
+    .lang-grid{display:flex;flex-wrap:wrap;gap:8px}
+    .lang-option{
+      background:var(--card);border:1px solid var(--border);
+      border-radius:20px;padding:8px 18px;
+      cursor:pointer;transition:all 0.15s;
+      font-size:14px;font-weight:600;color:var(--text2);
     }
-    .lang-option.active { border-color: var(--accent); background: var(--tag); }
-    .lang-flag { font-size: 26px; margin-bottom: 4px; }
-    .lang-name { font-size: 13px; font-weight: 600; color: var(--text); }
-    .lang-code { font-size: 10px; color: var(--text2); }
+    .lang-option.active{border-color:var(--accent);color:var(--accent);background:var(--tag)}
 
     /* ── DEV CARD ── */
-    .dev-card {
-      background: var(--card); border: 0.5px solid var(--border);
-      border-radius: 12px; padding: 16px;
-      display: flex; align-items: center; gap: 14px;
+    .dev-card{
+      background:var(--card);border:0.5px solid var(--border);
+      border-radius:14px;padding:20px;
     }
-    .dev-avatar {
-      width: 50px; height: 50px; border-radius: 50%;
-      background: var(--accent); color: #fff;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px; font-weight: 700; flex-shrink: 0;
+    .dev-avatar{
+      width:54px;height:54px;border-radius:12px;
+      background:var(--accent);
+      display:flex;align-items:center;justify-content:center;
+      font-size:26px;margin-bottom:12px;
     }
-    .dev-name { font-size: 15px; font-weight: 700; color: var(--text); }
-    .dev-role { font-size: 12px; color: var(--text2); margin: 2px 0; }
-    .dev-mail { font-size: 12px; color: var(--accent); }
-    .app-version { font-size: 11px; color: var(--text2); text-align: center; padding: 12px 0 4px; }
-    .fmt-wrap { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 16px; }
-    .fmt-wrap .fmt-tag { font-size: 11px; padding: 4px 10px; }
+    .dev-name{font-size:18px;font-weight:700;color:var(--text);margin-bottom:2px}
+    .dev-role{font-size:13px;color:var(--accent2);font-weight:600;margin-bottom:6px}
+    .dev-mail{font-size:13px;color:var(--text2);display:flex;align-items:center;gap:6px}
+    .app-version{font-size:11px;color:var(--text2);text-align:center;padding:12px 0 4px}
+    .fmt-wrap{display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px}
+    .fmt-wrap .fmt-tag{font-size:11px;padding:4px 10px}
 
     /* ── READER ── */
-    .reader-topbar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 16px; background: var(--navbar);
-      border-bottom: 0.5px solid var(--border); flex-shrink: 0;
+    .reader-topbar{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:12px 16px;background:var(--navbar);
+      border-bottom:0.5px solid var(--border);flex-shrink:0;
     }
-    .reader-book-title {
-      font-size: 14px; font-weight: 600; color: var(--text);
-      flex: 1; text-align: center; overflow: hidden;
-      text-overflow: ellipsis; white-space: nowrap; margin: 0 8px;
+    .reader-book-title{
+      font-size:14px;font-weight:600;color:var(--text);
+      flex:1;text-align:center;overflow:hidden;
+      text-overflow:ellipsis;white-space:nowrap;margin:0 8px;
     }
-    .read-progress-track { height: 3px; background: var(--bg2); flex-shrink: 0; }
-    .read-progress-fill { height: 3px; background: var(--accent); transition: width 0.4s; }
-    .reader-body {
-      flex: 1; padding: 22px 20px;
-      font-size: 17px; line-height: 1.85; color: var(--text);
-      font-family: Georgia, 'Times New Roman', serif;
-      overflow-y: auto; -webkit-overflow-scrolling: touch;
-      white-space: pre-wrap; word-break: break-word;
+    .read-progress-track{height:3px;background:var(--bg2);flex-shrink:0}
+    .read-progress-fill{height:3px;background:var(--accent);transition:width 0.4s}
+
+    /* Navegación de capítulos */
+    .chapter-nav{
+      display:flex;align-items:center;gap:8px;
+      padding:8px 12px;background:var(--bg2);
+      border-bottom:0.5px solid var(--border);flex-shrink:0;
+      overflow-x:auto;scrollbar-width:none;
     }
-    .reader-footer {
-      display: flex; align-items: center; gap: 8px;
-      padding: 10px 16px; background: var(--navbar);
-      border-top: 0.5px solid var(--border); flex-shrink: 0;
-      /* en el reader el navbar NO está visible, así que no necesita padding-bottom extra */
+    .chapter-nav::-webkit-scrollbar{display:none}
+    .ch-btn{
+      flex-shrink:0;padding:5px 12px;border-radius:16px;
+      font-size:11px;font-weight:600;
+      border:0.5px solid var(--border);
+      background:var(--card);color:var(--text2);
+      cursor:pointer;white-space:nowrap;transition:all 0.15s;
     }
-    .page-info { flex: 1; text-align: center; font-size: 12px; color: var(--text2); }
+    .ch-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+    .reader-body{
+      flex:1;padding:12px 6px;
+      font-size:17px;line-height:1.85;color:var(--text);
+      font-family:Georgia,'Times New Roman',serif;
+      overflow-y:auto;-webkit-overflow-scrolling:touch;
+      word-break:break-word;
+      background:var(--bg);
+    }
+    /* Cuando hay canvas PDF, fondo neutro oscuro */
+    .reader-body.pdf-mode{
+      background:#1a1a1a;
+      padding:12px 4px;
+    }
+    /* Imágenes dentro del epub */
+    .reader-body img{
+      max-width:100%;height:auto;
+      border-radius:8px;margin:12px 0;display:block;
+    }
+    .reader-body p{margin-bottom:1.1em}
+    .reader-body h1,.reader-body h2,.reader-body h3{
+      color:var(--text);font-family:inherit;
+      margin:1.2em 0 0.5em;line-height:1.3;
+    }
+    .reader-footer{
+      display:flex;align-items:center;gap:8px;
+      padding:10px 16px;background:var(--navbar);
+      border-top:0.5px solid var(--border);flex-shrink:0;
+    }
+    .page-info{flex:1;text-align:center;font-size:12px;color:var(--text2)}
+    .nav-arrow{
+      background:var(--card);border:0.5px solid var(--border);
+      border-radius:10px;padding:8px 16px;
+      font-size:12px;font-weight:600;color:var(--text2);
+      cursor:pointer;display:flex;align-items:center;gap:4px;
+      white-space:nowrap;
+    }
+    .nav-arrow:active{background:var(--bg2)}
+    .nav-arrow svg{width:16px;height:16px}
+    .nav-arrow.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
 
     /* ── MODAL ── */
-    .modal-backdrop {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.5);
-      display: flex; align-items: flex-end; justify-content: center;
-      z-index: 1000; opacity: 0; pointer-events: none;
-      transition: opacity 0.25s;
+    .modal-backdrop{
+      position:fixed;inset:0;background:rgba(0,0,0,0.65);
+      display:flex;align-items:flex-end;justify-content:center;
+      z-index:1000;opacity:0;pointer-events:none;transition:opacity 0.25s;
     }
-    .modal-backdrop.show { opacity: 1; pointer-events: all; }
-    .modal-sheet {
-      background: var(--bg); width: 100%; max-width: 540px;
-      border-radius: 20px 20px 0 0;
-      padding: 16px 16px 30px;
-      transform: translateY(100%);
-      transition: transform 0.3s cubic-bezier(.4,0,.2,1);
-      max-height: 80vh; overflow-y: auto;
+    .modal-backdrop.show{opacity:1;pointer-events:all}
+    .modal-sheet{
+      background:var(--bg2);width:100%;max-width:540px;
+      border-radius:20px 20px 0 0;
+      padding:16px 16px 30px;
+      transform:translateY(100%);
+      transition:transform 0.3s cubic-bezier(.4,0,.2,1);
+      max-height:80vh;overflow-y:auto;
     }
-    .modal-backdrop.show .modal-sheet { transform: translateY(0); }
-    .modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 18px; }
-    .modal-title { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 5px; }
-    .modal-sub { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
-    .perm-notice {
-      background: var(--tag); color: var(--tagtext);
-      border-radius: 10px; padding: 12px 14px;
-      font-size: 12px; line-height: 1.5; margin-bottom: 16px;
-      display: flex; gap: 10px; align-items: flex-start;
+    .modal-backdrop.show .modal-sheet{transform:translateY(0)}
+    .modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px}
+    .modal-title{font-size:17px;font-weight:700;color:var(--text);margin-bottom:5px}
+    .modal-sub{font-size:13px;color:var(--text2);margin-bottom:16px}
+    .perm-notice{
+      background:var(--tag);color:var(--tagtext);
+      border-radius:10px;padding:12px 14px;
+      font-size:12px;line-height:1.5;margin-bottom:16px;
+      display:flex;gap:10px;align-items:flex-start;
     }
-    .perm-notice svg { width: 18px; height: 18px; flex-shrink: 0; }
-    .fmt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
-    .fmt-item {
-      background: var(--bg2); border-radius: 10px; padding: 12px 6px;
-      text-align: center; font-size: 11px; font-weight: 700; color: var(--text2);
-      border: 0.5px solid var(--border); cursor: pointer; transition: all 0.15s;
+    .perm-notice svg{width:18px;height:18px;flex-shrink:0}
+    .fmt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+    .fmt-item{
+      background:var(--card);border-radius:10px;padding:12px 6px;
+      text-align:center;font-size:11px;font-weight:700;color:var(--text2);
+      border:0.5px solid var(--border);cursor:pointer;transition:all 0.15s;
     }
-    .fmt-item:active { background: var(--tag); color: var(--tagtext); }
-    .fmt-item svg { width: 22px; height: 22px; color: var(--accent); display: block; margin: 0 auto 5px; }
-    .modal-actions { display: flex; gap: 10px; }
-    .btn-cancel {
-      flex: 1; padding: 13px; border-radius: 10px;
-      border: 0.5px solid var(--border); background: var(--bg2);
-      color: var(--text); font-size: 14px; cursor: pointer; font-family: inherit;
+    .fmt-item:active{background:var(--tag);color:var(--tagtext)}
+    .fmt-item svg{width:22px;height:22px;color:var(--accent);display:block;margin:0 auto 5px}
+    .modal-actions{display:flex;gap:10px}
+    .btn-cancel{
+      flex:1;padding:13px;border-radius:12px;
+      border:0.5px solid var(--border);background:var(--card);
+      color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;
     }
-    .btn-primary {
-      flex: 1; padding: 13px; border-radius: 10px;
-      border: none; background: var(--accent);
-      color: #fff; font-size: 14px; font-weight: 700;
-      cursor: pointer; font-family: inherit;
-      display: flex; align-items: center; justify-content: center; gap: 6px;
+    .btn-primary{
+      flex:1;padding:13px;border-radius:12px;border:none;
+      background:var(--accent);color:#fff;
+      font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
+      display:flex;align-items:center;justify-content:center;gap:6px;
     }
 
-    /* ── EMPTY STATE ── */
-    .empty-state { text-align: center; padding: 50px 24px; }
-    .empty-state svg { width: 52px; height: 52px; color: var(--border); margin-bottom: 14px; display: block; margin: 0 auto 14px; }
-    .empty-state p { font-size: 14px; color: var(--text2); }
+    /* ── EMPTY ── */
+    .empty-state{text-align:center;padding:50px 24px}
+    .empty-state svg{width:52px;height:52px;color:var(--border);display:block;margin:0 auto 14px}
+    .empty-state p{font-size:14px;color:var(--text2)}
 
-    /* ── LOADING ── */
-    .loading-overlay {
-      position: fixed; inset: 0; background: var(--bg);
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      z-index: 500; gap: 16px;
+    /* ── LOADING / TOAST ── */
+    .loading-overlay{
+      position:fixed;inset:0;background:var(--bg);
+      display:flex;flex-direction:column;
+      align-items:center;justify-content:center;
+      z-index:500;gap:16px;
     }
-    .spinner {
-      width: 36px; height: 36px; border: 3px solid var(--border);
-      border-top-color: var(--accent); border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+    .spinner{
+      width:36px;height:36px;border:3px solid var(--border);
+      border-top-color:var(--accent);border-radius:50%;
+      animation:spin 0.8s linear infinite;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-text { font-size: 14px; color: var(--text2); }
-
-    /* ── TOAST ── */
-    .toast {
-      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-      background: var(--text); color: var(--bg);
-      padding: 10px 20px; border-radius: 20px;
-      font-size: 13px; font-weight: 500; z-index: 2000;
-      opacity: 0; transition: opacity 0.3s; pointer-events: none;
-      white-space: nowrap;
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loading-text{font-size:14px;color:var(--text2)}
+    .toast{
+      position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+      background:var(--card);color:var(--text);border:0.5px solid var(--border);
+      padding:10px 20px;border-radius:20px;
+      font-size:13px;font-weight:500;z-index:2000;
+      opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;
     }
-    .toast.show { opacity: 1; }
+    .toast.show{opacity:1}
   </style>
 </head>
 <body>
-
 <div id="app">
 
-  <!-- ════════════════ INICIO ════════════════ -->
-  <section class="screen active" id="screen-home">
-    <div class="topbar">
-      <div class="topbar-title">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round">
-          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-        </svg>
-        LibroLibre
-      </div>
-      <div class="topbar-actions">
-        <button class="icon-btn" onclick="openModal()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        </button>
-        <button class="icon-btn" id="dark-btn" onclick="toggleDark()">
-          <svg id="dark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        </button>
+<!-- ══════════════ INICIO ══════════════ -->
+<section class="screen active" id="screen-home">
+  <div class="topbar">
+    <div class="topbar-title">
+      <div class="app-logo">✦</div>
+      LibroLibre
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" onclick="openModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+    </div>
+  </div>
+  <div class="content">
+    <div id="hero-banner" style="display:none" class="hero-banner">
+      <div class="hero-cover" id="hero-emoji">📖</div>
+      <div class="hero-info">
+        <div class="hero-label">✦ Seguir leyendo</div>
+        <div class="hero-title" id="hero-title">—</div>
+        <div class="hero-author" id="hero-author">—</div>
+        <div class="progress-track"><div class="progress-fill" id="hero-progress" style="width:0%"></div></div>
+        <button class="hero-btn" onclick="continueReading()">Continuar lectura</button>
       </div>
     </div>
-    <div class="content">
-      <div id="hero-section">
-        <div class="hero-banner" id="hero-banner" style="display:none">
-          <div class="hero-cover" id="hero-emoji">📖</div>
-          <div class="hero-info">
-            <div class="hero-label">Seguir leyendo</div>
-            <div class="hero-title" id="hero-title">—</div>
-            <div class="hero-author" id="hero-author">—</div>
-            <div class="progress-track"><div class="progress-fill" id="hero-progress" style="width:0%"></div></div>
-            <button class="hero-btn" onclick="continueReading()">Continuar lectura</button>
-          </div>
-        </div>
+
+    <div class="section-title" id="recent-title" style="display:none">Recientes</div>
+    <div class="books-row" id="books-row"></div>
+
+    <div class="section-title" style="margin-top:20px">Colecciones</div>
+    <div class="col-grid">
+      <div class="col-card" onclick="goScreen('library')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <div class="col-card-title">Mi biblioteca</div>
+        <div class="col-card-sub" id="home-count">0 documentos</div>
       </div>
-
-      <div class="section-title" id="recent-title" style="display:none">Agregados recientemente</div>
-      <div class="books-row" id="books-row"></div>
-
-      <div class="section-title" style="margin-top:20px">Colecciones</div>
-      <div class="col-grid">
-        <div class="col-card" onclick="goScreen('library')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-          <div class="col-card-title">Mi biblioteca</div>
-          <div class="col-card-sub" id="home-count">0 documentos</div>
-        </div>
-        <div class="col-card" onclick="goScreen('library'); setLibFilter('fav')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-          <div class="col-card-title">Favoritos</div>
-          <div class="col-card-sub" id="home-fav">0 documentos</div>
-        </div>
-      </div>
-
-      <div id="home-empty" style="display:none">
-        <div class="empty-state">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-          <p>Tu biblioteca está vacía.<br>Tocá <strong>+</strong> para agregar tu primer documento.</p>
-        </div>
+      <div class="col-card" onclick="goScreen('library');setLibFilter('fav',null)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <div class="col-card-title">Favoritos</div>
+        <div class="col-card-sub" id="home-fav">0 documentos</div>
       </div>
     </div>
-    <nav class="navbar" id="nav-home">
-      <button class="nav-item active" onclick="goScreen('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Inicio</button>
-      <button class="nav-item" onclick="goScreen('search')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Buscar</button>
-      <button class="nav-item" onclick="goScreen('library')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Biblioteca</button>
-      <button class="nav-item" onclick="goScreen('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Ajustes</button>
-    </nav>
-  </section>
-
-  <!-- ════════════════ BUSCAR ════════════════ -->
-  <section class="screen" id="screen-search">
-    <div class="topbar"><div class="topbar-title">Buscar</div></div>
-    <div class="content">
-      <div class="search-box">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="search" id="search-input" placeholder="Título, autor o formato..." oninput="renderSearch()" />
-      </div>
-      <div class="filter-row" id="search-filters">
-        <div class="chip active" onclick="setSearchFilter(this,'')">Todos</div>
-        <div class="chip" onclick="setSearchFilter(this,'PDF')">PDF</div>
-        <div class="chip" onclick="setSearchFilter(this,'EPUB')">EPUB</div>
-        <div class="chip" onclick="setSearchFilter(this,'MOBI')">MOBI</div>
-        <div class="chip" onclick="setSearchFilter(this,'FB2')">FB2</div>
-        <div class="chip" onclick="setSearchFilter(this,'TXT')">TXT</div>
-        <div class="chip" onclick="setSearchFilter(this,'DOC')">DOC</div>
-        <div class="chip" onclick="setSearchFilter(this,'CBR')">Comic</div>
-      </div>
-      <div id="search-list"></div>
-    </div>
-    <nav class="navbar">
-      <button class="nav-item" onclick="goScreen('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Inicio</button>
-      <button class="nav-item active" onclick="goScreen('search')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Buscar</button>
-      <button class="nav-item" onclick="goScreen('library')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Biblioteca</button>
-      <button class="nav-item" onclick="goScreen('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Ajustes</button>
-    </nav>
-  </section>
-
-  <!-- ════════════════ BIBLIOTECA ════════════════ -->
-  <section class="screen" id="screen-library">
-    <div class="topbar">
-      <div class="topbar-title">Mi biblioteca</div>
-      <button class="icon-btn" onclick="openModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:22px;height:22px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-    </div>
-    <div class="content">
-      <div class="filter-row">
-        <div class="chip active" onclick="setLibFilter('all', this)">Todos</div>
-        <div class="chip" onclick="setLibFilter('reading', this)">Leyendo</div>
-        <div class="chip" onclick="setLibFilter('done', this)">Terminados</div>
-        <div class="chip" onclick="setLibFilter('fav', this)">Favoritos</div>
-      </div>
-      <div id="library-list"></div>
-    </div>
-    <nav class="navbar">
-      <button class="nav-item" onclick="goScreen('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Inicio</button>
-      <button class="nav-item" onclick="goScreen('search')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Buscar</button>
-      <button class="nav-item active" onclick="goScreen('library')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Biblioteca</button>
-      <button class="nav-item" onclick="goScreen('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Ajustes</button>
-    </nav>
-  </section>
-
-  <!-- ════════════════ AJUSTES ════════════════ -->
-  <section class="screen" id="screen-settings">
-    <div class="topbar"><div class="topbar-title">Ajustes</div></div>
-    <div class="content">
-      <div class="settings-group">
-        <div class="settings-label">Apariencia</div>
-        <div class="settings-card">
-          <div class="settings-row" onclick="toggleDark()">
-            <div class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div>
-            <div class="settings-body"><div class="settings-row-title">Modo oscuro</div><div class="settings-row-sub" id="dark-sub">Desactivado</div></div>
-            <div class="toggle" id="toggle-dark" onclick="event.stopPropagation();toggleDark()"><div class="toggle-dot"></div></div>
-          </div>
-          <div class="settings-row" onclick="changeFontSize(-1)">
-            <div class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></div>
-            <div class="settings-body"><div class="settings-row-title">Tamaño de fuente</div><div class="settings-row-sub" id="font-sub">Mediana (17px)</div></div>
-            <div style="display:flex;gap:6px">
-              <button onclick="event.stopPropagation();changeFontSize(-1)" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:6px;padding:4px 10px;font-size:16px;color:var(--text);cursor:pointer">−</button>
-              <button onclick="event.stopPropagation();changeFontSize(1)" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:6px;padding:4px 10px;font-size:16px;color:var(--text);cursor:pointer">+</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="settings-group">
-        <div class="settings-label">Idioma de la interfaz</div>
-        <div class="lang-grid">
-          <div class="lang-option active" onclick="selectLang(this,'es')"><div class="lang-flag">🇦🇷</div><div class="lang-name">Español</div><div class="lang-code">ES</div></div>
-          <div class="lang-option" onclick="selectLang(this,'en')"><div class="lang-flag">🇺🇸</div><div class="lang-name">English</div><div class="lang-code">EN</div></div>
-          <div class="lang-option" onclick="selectLang(this,'pt')"><div class="lang-flag">🇧🇷</div><div class="lang-name">Português</div><div class="lang-code">PT</div></div>
-          <div class="lang-option" onclick="selectLang(this,'fr')"><div class="lang-flag">🇫🇷</div><div class="lang-name">Français</div><div class="lang-code">FR</div></div>
-        </div>
-      </div>
-
-      <div class="settings-group">
-        <div class="settings-label">Formatos compatibles</div>
-        <div class="settings-card">
-          <div class="fmt-wrap">
-            <span class="fmt-tag">EPUB / EPUB3</span><span class="fmt-tag">PDF</span>
-            <span class="fmt-tag">MOBI</span><span class="fmt-tag">AZW / AZW3</span>
-            <span class="fmt-tag">TPZ</span><span class="fmt-tag">PCR</span>
-            <span class="fmt-tag">FB2</span><span class="fmt-tag">LIT</span>
-            <span class="fmt-tag">HTML</span><span class="fmt-tag">TXT</span>
-            <span class="fmt-tag">DOC / DOCX</span><span class="fmt-tag">CBR / CBZ / CBA</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="settings-group">
-        <div class="settings-label">Desarrollador</div>
-        <div class="dev-card">
-          <div class="dev-avatar">FN</div>
-          <div>
-            <div class="dev-name">Fernando Navarro</div>
-            <div class="dev-role">Desarrollador independiente</div>
-            <div class="dev-mail">fernandonavarro8700@gmail.com</div>
-          </div>
-        </div>
-      </div>
-      <div class="app-version">LibroLibre v1.0.0 · © 2025 Fernando Navarro</div>
-    </div>
-    <nav class="navbar">
-      <button class="nav-item" onclick="goScreen('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Inicio</button>
-      <button class="nav-item" onclick="goScreen('search')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Buscar</button>
-      <button class="nav-item" onclick="goScreen('library')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Biblioteca</button>
-      <button class="nav-item active" onclick="goScreen('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Ajustes</button>
-    </nav>
-  </section>
-
-  <!-- ════════════════ LECTOR ════════════════ -->
-  <section class="screen" id="screen-reader" style="padding-bottom:0">
-    <div class="reader-topbar">
-      <button class="icon-btn" onclick="closeReader()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:22px;height:22px"><polyline points="15 18 9 12 15 6"/></svg></button>
-      <div class="reader-book-title" id="reader-title">—</div>
-      <button class="icon-btn" id="fav-btn" onclick="toggleFav()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:22px;height:22px"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
-    </div>
-    <div class="read-progress-track"><div class="read-progress-fill" id="reader-progress" style="width:0%"></div></div>
-    <div class="reader-body" id="reader-body" onscroll="onReaderScroll()">
-      <p style="color:var(--text2);font-size:14px;font-style:italic">Cargando documento…</p>
-    </div>
-    <div class="reader-footer">
-      <button class="icon-btn" onclick="readerFontSize(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:20px;height:20px"><line x1="4" y1="6" x2="14" y2="6"/><line x1="4" y1="12" x2="10" y2="12"/><polyline points="14 18 17 15 20 18"/><line x1="17" y1="15" x2="17" y2="21"/></svg></button>
-      <div class="page-info" id="reader-info">0% leído</div>
-      <button class="icon-btn" onclick="readerFontSize(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:20px;height:20px"><line x1="4" y1="6" x2="14" y2="6"/><line x1="4" y1="12" x2="12" y2="12"/><polyline points="12 18 15 15 18 18"/><line x1="15" y1="15" x2="15" y2="21"/><line x1="17" y1="6" x2="17" y2="10"/><line x1="19" y1="8" x2="15" y2="8"/></svg></button>
-    </div>
-  </section>
-
-  <!-- ════════════════ MODAL AGREGAR ════════════════ -->
-  <div class="modal-backdrop" id="modal" onclick="closeModalOutside(event)">
-    <div class="modal-sheet">
-      <div class="modal-handle"></div>
-      <div class="modal-title">Abrir un documento</div>
-      <div class="modal-sub">Seleccioná el tipo de archivo</div>
-      <div class="perm-notice">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        La app pedirá permiso para acceder a tus archivos al abrir el selector.
-      </div>
-      <div class="fmt-grid">
-        <div class="fmt-item" onclick="pickFile('.epub')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>EPUB</div>
-        <div class="fmt-item" onclick="pickFile('.pdf')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF</div>
-        <div class="fmt-item" onclick="pickFile('.txt')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>TXT</div>
-        <div class="fmt-item" onclick="pickFile('.fb2')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>FB2</div>
-        <div class="fmt-item" onclick="pickFile('.html,.htm')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>HTML</div>
-        <div class="fmt-item" onclick="pickFile('.doc,.docx')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>DOC</div>
-        <div class="fmt-item" onclick="pickFile('.cbr,.cbz,.cba')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Comic</div>
-        <div class="fmt-item" onclick="pickFile('.mobi,.azw,.azw3,.lit,.tpz,.pcr')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>MOBI</div>
-        <div class="fmt-item" onclick="pickFile('*')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Todos</div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
-        <button class="btn-primary" onclick="pickFile('*')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:16px;height:16px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Explorar archivos
-        </button>
+    <div id="home-empty" style="display:none">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <p>Tu biblioteca está vacía.<br>Tocá <strong>+</strong> para agregar tu primer documento.</p>
       </div>
     </div>
   </div>
+  <nav class="navbar">
+    <button class="nav-item active" onclick="goScreen('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Inicio</button>
+    <button class="nav-item" onclick="goScreen('search')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Buscar</button>
+    <button class="nav-item" onclick="goScreen('library')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Biblioteca</button>
+    <button class="nav-item" onclick="goScreen('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l-.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Ajustes</button>
+  </nav>
+</section>
 
-  <!-- Loading overlay -->
-  <div class="loading-overlay" id="loading" style="display:none">
-    <div class="spinner"></div>
-    <div class="loading-text" id="loading-text">Abriendo documento…</div>
+<!-- ══════════════ BUSCAR ══════════════ -->
+<section class="screen" id="screen-search">
+  <div class="topbar"><div class="topbar-title"><div class="app-logo">✦</div>Buscar</div></div>
+  <div class="content">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="search" id="search-input" placeholder="Título, autor o formato..." oninput="renderSearch()"/>
+    </div>
+    <div class="filter-row" id="search-filters">
+      <div class="chip active" onclick="setSearchFilter(this,'')">Todos</div>
+      <div class="chip" onclick="setSearchFilter(this,'PDF')">PDF</div>
+      <div class="chip" onclick="setSearchFilter(this,'EPUB')">EPUB</div>
+      <div class="chip" onclick="setSearchFilter(this,'TXT')">TXT</div>
+      <div class="chip" onclick="setSearchFilter(this,'FB2')">FB2</div>
+      <div class="chip" onclick="setSearchFilter(this,'DOC')">DOC</div>
+      <div class="chip" onclick="setSearchFilter(this,'CBR')">Comic</div>
+    </div>
+    <div id="search-list"></div>
   </div>
+  <nav class="navbar">
+    <button class="nav-item" onclick="goScreen('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:22px;height:22px"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Inicio</button>
+    <button class="nav-item active" onclick="goScreen('search')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:22px;height:22px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Buscar</button>
+    <button class="nav-item" onclick="goScreen('library')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:22px;height:22px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Biblioteca</button>
+    <button class="nav-item" onclick="goScreen('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:22px;height:22px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l-.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Ajustes</button>
+  </nav>
+</section>
 
-  <!-- Toast -->
-  <div class="toast" id="toast"></div>
+<!-- ══════════════ BIBLIOTECA ══════════════ -->
+<section class="screen" id="screen-library">
+  <div class="topbar">
+    <div class="topbar-title"><div class="app-logo">✦</div>Biblioteca</div>
+    <button class="icon-btn" onclick="openModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:22px;height:22px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+  </div>
+  <div class="content">
+    <div class="filter-row">
+      <div class="chip active" onclick="setLibFilter('all',this)">Todos</div>
+      <div class="chip" onclick="setLibFilter('reading',this)">Leyendo</div>
+      <div class="chip" onclick="setLibFilter('done',this)">Terminados</div>
+      <div class="chip" onclick="setLibFilter('fav',this)">Favoritos</div>
+    </div>
+    <div id="library-list"></div>
+  </div>
+  <nav class="navbar">
+    <button class="nav-item" onclick="goScreen('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:22px;height:22px"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Inicio</button>
+    <button class="nav-item" onclick="goScreen('search')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:22px;height:22px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Buscar</button>
+    <button class="nav-item active" onclick="goScreen('library')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:22px;height:22px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Biblioteca</button>
+    <button class="nav-item" onclick="goScreen('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:22px;height:22px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l-.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Ajustes</button>
+  </nav>
+</section>
 
-</div><!-- fin #app -->
+<!-- ══════════════ AJUSTES ══════════════ -->
+<section class="screen" id="screen-settings">
+  <div class="topbar"><div class="topbar-title"><div class="app-logo">✦</div>Ajustes</div></div>
+  <div class="content">
+    <div class="settings-group">
+      <div class="settings-label">Apariencia</div>
+      <div class="settings-card">
+        <div class="settings-row" onclick="toggleDark()">
+          <div class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div>
+          <div class="settings-body"><div class="settings-row-title">Tema oscuro</div><div class="settings-row-sub" id="dark-sub">Activado</div></div>
+          <div class="toggle on" id="toggle-dark" onclick="event.stopPropagation();toggleDark()"><div class="toggle-dot"></div></div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></div>
+          <div class="settings-body"><div class="settings-row-title">Tamaño de fuente</div><div class="settings-row-sub" id="font-sub">17px</div></div>
+          <div style="display:flex;gap:6px">
+            <button onclick="event.stopPropagation();changeFontSize(-1)" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;padding:5px 12px;font-size:16px;color:var(--text);cursor:pointer">−</button>
+            <button onclick="event.stopPropagation();changeFontSize(1)" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;padding:5px 12px;font-size:16px;color:var(--text);cursor:pointer">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-label">Idioma</div>
+      <div class="lang-grid">
+        <div class="lang-option active" onclick="selectLang(this)">Español</div>
+        <div class="lang-option" onclick="selectLang(this)">English</div>
+        <div class="lang-option" onclick="selectLang(this)">Português</div>
+        <div class="lang-option" onclick="selectLang(this)">Français</div>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-label">Formatos compatibles</div>
+      <div class="settings-card">
+        <div class="fmt-wrap">
+          <span class="fmt-tag">EPUB/EPUB3</span><span class="fmt-tag">PDF</span>
+          <span class="fmt-tag">MOBI</span><span class="fmt-tag">AZW/AZW3</span>
+          <span class="fmt-tag">FB2</span><span class="fmt-tag">LIT</span>
+          <span class="fmt-tag">HTML</span><span class="fmt-tag">TXT</span>
+          <span class="fmt-tag">DOC/DOCX</span><span class="fmt-tag">CBR/CBZ/CBA</span>
+          <span class="fmt-tag">TPZ</span><span class="fmt-tag">PCR</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-label">Desarrollador</div>
+      <div class="dev-card">
+        <div class="dev-avatar">👨‍💻</div>
+        <div class="dev-name">Fernando Navarro</div>
+        <div class="dev-role">Desarrollador</div>
+        <div class="dev-mail">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:14px;height:14px"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          fernandonavarro8700@gmail.com
+        </div>
+      </div>
+    </div>
+    <div class="app-version">LibroLibre v1.0.0 · © 2025 Fernando Navarro</div>
+  </div>
+  <nav class="navbar">
+    <button class="nav-item" onclick="goScreen('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:22px;height:22px"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Inicio</button>
+    <button class="nav-item" onclick="goScreen('search')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:22px;height:22px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Buscar</button>
+    <button class="nav-item" onclick="goScreen('library')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:22px;height:22px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Biblioteca</button>
+    <button class="nav-item active" onclick="goScreen('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:22px;height:22px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l-.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Ajustes</button>
+  </nav>
+</section>
+
+<!-- ══════════════ LECTOR ══════════════ -->
+<section class="screen" id="screen-reader" style="padding-bottom:0">
+  <div class="reader-topbar">
+    <button class="icon-btn" onclick="closeReader()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:22px;height:22px"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <div class="reader-book-title" id="reader-title">—</div>
+    <button class="icon-btn" id="fav-btn" onclick="toggleFav()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:22px;height:22px"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+  </div>
+  <div class="read-progress-track"><div class="read-progress-fill" id="reader-progress" style="width:0%"></div></div>
+  <!-- Barra de capítulos EPUB -->
+  <div class="chapter-nav" id="chapter-nav" style="display:none"></div>
+  <div class="reader-body" id="reader-body" onscroll="onReaderScroll()"></div>
+  <div class="reader-footer">
+    <button class="nav-arrow" id="btn-prev" onclick="handlePrev()" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>Anterior
+    </button>
+    <div class="page-info" id="reader-info">0% leído</div>
+    <button class="nav-arrow primary" id="btn-next" onclick="handleNext()" style="display:none">
+      Siguiente<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+</section>
+
+<!-- ══════════════ MODAL ══════════════ -->
+<div class="modal-backdrop" id="modal" onclick="closeModalOutside(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Abrir un documento</div>
+    <div class="modal-sub">Seleccioná el tipo de archivo</div>
+    <div class="perm-notice">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      La app pedirá permiso para acceder a tus archivos al abrir el selector.
+    </div>
+    <div class="fmt-grid">
+      <div class="fmt-item" onclick="pickFile('.epub')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>EPUB</div>
+      <div class="fmt-item" onclick="pickFile('.pdf')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PDF</div>
+      <div class="fmt-item" onclick="pickFile('.txt')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>TXT</div>
+      <div class="fmt-item" onclick="pickFile('.fb2')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>FB2</div>
+      <div class="fmt-item" onclick="pickFile('.html,.htm')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>HTML</div>
+      <div class="fmt-item" onclick="pickFile('.doc,.docx')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>DOC</div>
+      <div class="fmt-item" onclick="pickFile('.cbr,.cbz,.cba')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Comic</div>
+      <div class="fmt-item" onclick="pickFile('.mobi,.azw,.azw3,.lit,.tpz,.pcr')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>MOBI</div>
+      <div class="fmt-item" onclick="pickFile('*')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Todos</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="pickFile('*')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:16px;height:16px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Explorar archivos
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loading" style="display:none">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">Abriendo documento…</div>
+</div>
+<div class="toast" id="toast"></div>
+
+</div><!-- #app -->
 
 <script>
-// ══════════════════════════════════════════
-//  DATOS / ESTADO
-// ══════════════════════════════════════════
-let library = [];      // array de objetos libro
+// ═══════════ ESTADO ═══════════
+let library = [];
 let currentBookId = null;
-let isDark = false;
+let isDark = true;   // por defecto oscuro como Palabra Diaria
 let readerFontSz = 17;
 let searchFilter = '';
 let libFilter = 'all';
 
-function saveLibrary() {
-  try { localStorage.setItem('ll_library', JSON.stringify(library)); } catch(e){}
-}
-function loadLibrary() {
-  try {
-    const d = localStorage.getItem('ll_library');
-    if (d) library = JSON.parse(d);
-  } catch(e){ library = []; }
-}
+// Para EPUB por capítulos
+let epubChapters = [];   // [{title, html, images:{filename->dataUrl}}]
+let currentChapter = 0;
 
-function bookEmoji(fmt) {
-  const m = { PDF:'📄', EPUB:'📗', TXT:'📝', FB2:'📘', HTML:'🌐', DOC:'📄', DOCX:'📄', MOBI:'📙', AZW:'📙', CBR:'🖼️', CBZ:'🖼️', CBA:'🖼️' };
-  return m[fmt.toUpperCase()] || '📄';
-}
-function spineColor(idx) {
-  const colors = ['#52B788','#2D6A4F','#9FE1CB','#1D9E75','#74C69D','#40916C'];
-  return colors[idx % colors.length];
-}
+function saveLib(){ try{ localStorage.setItem('ll_lib', JSON.stringify(library)); }catch(e){} }
+function loadLib(){ try{ const d=localStorage.getItem('ll_lib'); if(d) library=JSON.parse(d); }catch(e){ library=[]; } }
 
-// ══════════════════════════════════════════
-//  NAVEGACIÓN
-// ══════════════════════════════════════════
-function goScreen(name) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-' + name).classList.add('active');
-  if (name === 'home') renderHome();
-  if (name === 'library') renderLibrary();
-  if (name === 'search') renderSearch();
+const EMOJIS = { PDF:'📄',EPUB:'📗',TXT:'📝',FB2:'📘',HTML:'🌐',DOC:'📄',DOCX:'📄',MOBI:'📙',AZW:'📙',CBR:'🖼️',CBZ:'🖼️',CBA:'🖼️' };
+const SPINES = ['#7C3AED','#A78BFA','#6D28D9','#8B5CF6','#5B21B6','#9333EA'];
+function emoji(fmt){ return EMOJIS[fmt.toUpperCase()]||'📄'; }
+function spine(i){ return SPINES[i%SPINES.length]; }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ═══════════ NAVEGACIÓN ═══════════
+function goScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  if(name==='home') renderHome();
+  if(name==='library') renderLibrary();
+  if(name==='search') renderSearch();
 }
+function closeReader(){ goScreen('library'); }
 
-function closeReader() {
-  goScreen('library');
-}
-
-// ══════════════════════════════════════════
-//  RENDER HOME
-// ══════════════════════════════════════════
-function renderHome() {
-  const empty = library.length === 0;
-  document.getElementById('home-empty').style.display = empty ? 'block' : 'none';
-  document.getElementById('recent-title').style.display = empty ? 'none' : 'block';
-
-  // hero: último leído
-  const lastRead = library.find(b => b.progress > 0 && b.progress < 100);
+// ═══════════ HOME ═══════════
+function renderHome(){
+  const empty = library.length===0;
+  document.getElementById('home-empty').style.display = empty?'block':'none';
+  document.getElementById('recent-title').style.display = empty?'none':'block';
+  const last = library.find(b=>b.progress>0&&b.progress<100);
   const hero = document.getElementById('hero-banner');
-  if (lastRead) {
-    hero.style.display = 'flex';
-    document.getElementById('hero-title').textContent = lastRead.title;
-    document.getElementById('hero-author').textContent = lastRead.fmt;
-    document.getElementById('hero-emoji').textContent = bookEmoji(lastRead.fmt);
-    document.getElementById('hero-progress').style.width = lastRead.progress + '%';
-  } else {
-    hero.style.display = 'none';
-  }
-
-  // fila de recientes
-  const row = document.getElementById('books-row');
-  row.innerHTML = library.slice(-8).reverse().map((b,i) =>
+  if(last){
+    hero.style.display='flex';
+    document.getElementById('hero-title').textContent=last.title;
+    document.getElementById('hero-author').textContent=last.fmt;
+    document.getElementById('hero-emoji').textContent=emoji(last.fmt);
+    document.getElementById('hero-progress').style.width=last.progress+'%';
+  } else { hero.style.display='none'; }
+  document.getElementById('books-row').innerHTML=library.slice(-8).reverse().map((b,i)=>
     `<div class="book-card" onclick="openBook('${b.id}')">
-      <div class="book-cover"><div class="book-spine" style="background:${spineColor(i)}"></div>${bookEmoji(b.fmt)}</div>
+      <div class="book-cover"><div class="book-spine" style="background:${spine(i)}"></div>${emoji(b.fmt)}</div>
       <div class="book-info">${esc(b.title)}</div>
       <span class="fmt-tag">${b.fmt}</span>
-    </div>`
-  ).join('');
-
-  document.getElementById('home-count').textContent = library.length + ' documento' + (library.length !== 1 ? 's' : '');
-  document.getElementById('home-fav').textContent = library.filter(b=>b.fav).length + ' documento' + (library.filter(b=>b.fav).length !== 1 ? 's' : '');
+    </div>`).join('');
+  document.getElementById('home-count').textContent=library.length+' documento'+(library.length!==1?'s':'');
+  document.getElementById('home-fav').textContent=library.filter(b=>b.fav).length+' documento'+(library.filter(b=>b.fav).length!==1?'s':'');
 }
 
-// ══════════════════════════════════════════
-//  RENDER BIBLIOTECA
-// ══════════════════════════════════════════
-function renderLibrary() {
-  let list = [...library];
-  if (libFilter === 'reading') list = list.filter(b => b.progress > 0 && b.progress < 100);
-  if (libFilter === 'done') list = list.filter(b => b.progress >= 100);
-  if (libFilter === 'fav') list = list.filter(b => b.fav);
-
-  const el = document.getElementById('library-list');
-  if (!list.length) {
-    el.innerHTML = `<div class="empty-state">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-      <p>No hay documentos en esta categoría.</p></div>`;
+// ═══════════ BIBLIOTECA ═══════════
+function renderLibrary(){
+  let list=[...library];
+  if(libFilter==='reading') list=list.filter(b=>b.progress>0&&b.progress<100);
+  if(libFilter==='done') list=list.filter(b=>b.progress>=100);
+  if(libFilter==='fav') list=list.filter(b=>b.fav);
+  const el=document.getElementById('library-list');
+  if(!list.length){
+    el.innerHTML=`<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><p>No hay documentos en esta categoría.</p></div>`;
     return;
   }
-  el.innerHTML = list.map((b,i) => `
+  el.innerHTML=list.map((b,i)=>`
     <div class="list-book" onclick="openBook('${b.id}')">
-      <div class="list-cover"><div class="list-spine" style="background:${spineColor(i)}"></div>${bookEmoji(b.fmt)}</div>
+      <div class="list-cover"><div class="list-spine" style="background:${spine(i)}"></div>${emoji(b.fmt)}</div>
       <div class="list-info">
         <div class="list-title">${esc(b.title)}</div>
-        <div class="list-author">${esc(b.author || '')}</div>
+        <div class="list-author">${esc(b.author||'')}</div>
         <div style="display:flex;align-items:center;gap:8px">
           <span class="fmt-tag">${b.fmt}</span>
-          <span style="font-size:11px;color:var(--text2)">${b.progress > 0 ? '· ' + b.progress + '% leído' : '· Sin empezar'}</span>
-          ${b.fav ? '<span style="font-size:13px">❤️</span>' : ''}
+          <span style="font-size:11px;color:var(--text2)">${b.progress>0?'· '+b.progress+'% leído':'· Sin empezar'}</span>
+          ${b.fav?'<span style="font-size:13px">❤️</span>':''}
         </div>
       </div>
-      <div class="chevron-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+      <div class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div>
     </div>`).join('');
 }
 
-// ══════════════════════════════════════════
-//  RENDER BÚSQUEDA
-// ══════════════════════════════════════════
-function renderSearch() {
-  const q = (document.getElementById('search-input') || {value:''}).value.toLowerCase();
-  let list = library.filter(b => {
-    const matchQ = !q || b.title.toLowerCase().includes(q) || (b.author||'').toLowerCase().includes(q) || b.fmt.toLowerCase().includes(q);
-    const matchF = !searchFilter || b.fmt.toUpperCase() === searchFilter || (searchFilter === 'CBR' && ['CBR','CBZ','CBA'].includes(b.fmt.toUpperCase())) || (searchFilter === 'DOC' && ['DOC','DOCX'].includes(b.fmt.toUpperCase()));
-    return matchQ && matchF;
-  });
-  const el = document.getElementById('search-list');
-  if (!list.length) {
-    el.innerHTML = library.length === 0
-      ? `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><p>Tu biblioteca está vacía.<br>Tocá + para agregar documentos.</p></div>`
-      : `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>No se encontraron resultados.</p></div>`;
-    return;
-  }
-  el.innerHTML = list.map((b,i) => `
-    <div class="list-book" onclick="openBook('${b.id}')">
-      <div class="list-cover"><div class="list-spine" style="background:${spineColor(i)}"></div>${bookEmoji(b.fmt)}</div>
-      <div class="list-info">
-        <div class="list-title">${esc(b.title)}</div>
-        <div class="list-author">${esc(b.author || '')}</div>
-        <span class="fmt-tag">${b.fmt}</span>
-      </div>
-      <div class="chevron-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div>
-    </div>`).join('');
-}
-
-function setSearchFilter(el, fmt) {
-  document.querySelectorAll('#search-filters .chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  searchFilter = fmt;
-  renderSearch();
-}
-
-function setLibFilter(filter, el) {
-  libFilter = filter;
-  if (el) {
-    document.querySelectorAll('#screen-library .chip').forEach(c => c.classList.remove('active'));
-    el.classList.add('active');
-  }
+function setLibFilter(f,el){
+  libFilter=f;
+  if(el){ document.querySelectorAll('#screen-library .chip').forEach(c=>c.classList.remove('active')); el.classList.add('active'); }
   renderLibrary();
 }
 
-// ══════════════════════════════════════════
-//  ABRIR / LEER ARCHIVO
-// ══════════════════════════════════════════
-function pickFile(accept) {
+// ═══════════ BÚSQUEDA ═══════════
+function renderSearch(){
+  const q=(document.getElementById('search-input')||{value:''}).value.toLowerCase();
+  let list=library.filter(b=>{
+    const mQ=!q||b.title.toLowerCase().includes(q)||(b.author||'').toLowerCase().includes(q)||b.fmt.toLowerCase().includes(q);
+    const mF=!searchFilter||b.fmt.toUpperCase()===searchFilter||(searchFilter==='CBR'&&['CBR','CBZ','CBA'].includes(b.fmt.toUpperCase()))||(searchFilter==='DOC'&&['DOC','DOCX'].includes(b.fmt.toUpperCase()));
+    return mQ&&mF;
+  });
+  const el=document.getElementById('search-list');
+  if(!list.length){
+    el.innerHTML=`<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>${library.length===0?'Biblioteca vacía. Tocá + para agregar.':'Sin resultados.'}</p></div>`;
+    return;
+  }
+  el.innerHTML=list.map((b,i)=>`
+    <div class="list-book" onclick="openBook('${b.id}')">
+      <div class="list-cover"><div class="list-spine" style="background:${spine(i)}"></div>${emoji(b.fmt)}</div>
+      <div class="list-info">
+        <div class="list-title">${esc(b.title)}</div>
+        <div class="list-author">${esc(b.author||'')}</div>
+        <span class="fmt-tag">${b.fmt}</span>
+      </div>
+      <div class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </div>`).join('');
+}
+function setSearchFilter(el,fmt){ document.querySelectorAll('#search-filters .chip').forEach(c=>c.classList.remove('active')); el.classList.add('active'); searchFilter=fmt; renderSearch(); }
+
+// ═══════════ ABRIR ARCHIVO ═══════════
+function pickFile(accept){
   closeModal();
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = accept === '*' ? '.epub,.pdf,.txt,.fb2,.html,.htm,.doc,.docx,.cbr,.cbz,.cba,.mobi,.azw,.azw3,.lit,.tpz,.pcr' : accept;
-  input.onchange = e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    processFile(file);
-  };
+  const input=document.createElement('input');
+  input.type='file';
+  input.accept=accept==='*'?'.epub,.pdf,.txt,.fb2,.html,.htm,.doc,.docx,.cbr,.cbz,.cba,.mobi,.azw,.azw3,.lit,.tpz,.pcr':accept;
+  input.onchange=e=>{ const f=e.target.files[0]; if(f) processFile(f); };
   input.click();
 }
 
-async function processFile(file) {
-  showLoading('Procesando ' + file.name + '…');
-  const ext = file.name.split('.').pop().toLowerCase();
-  const id = Date.now().toString();
-  const title = file.name.replace(/\.[^.]+$/, '');
-  const fmt = ext.toUpperCase();
+async function processFile(file){
+  showLoading('Procesando '+file.name+'…');
+  const ext=file.name.split('.').pop().toLowerCase();
+  const id=Date.now().toString();
+  const title=file.name.replace(/\.[^.]+$/,'');
+  const fmt=ext.toUpperCase();
+  try{
+    let content='', chapters=[], author='';
 
-  try {
-    let content = '';
-
-    if (ext === 'txt') {
-      content = await readAsText(file);
-
-    } else if (ext === 'html' || ext === 'htm') {
-      const raw = await readAsText(file);
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(raw, 'text/html');
-      content = doc.body ? doc.body.innerText : raw;
-
-    } else if (ext === 'epub') {
-      content = await readEpub(file);
-
-    } else if (ext === 'fb2') {
-      content = await readFb2(file);
-
-    } else if (ext === 'pdf') {
-      content = await readPdf(file);
-
+    if(ext==='txt'){
+      content=await readText(file);
+    } else if(ext==='html'||ext==='htm'){
+      const raw=await readText(file);
+      const doc=new DOMParser().parseFromString(raw,'text/html');
+      content=doc.body?doc.body.innerText:raw;
+    } else if(ext==='epub'){
+      const result=await readEpub(file);
+      chapters=result.chapters;
+      author=result.author||'';
+      content=chapters.map(c=>c.text).join('\n\n───\n\n');
+    } else if(ext==='fb2'){
+      content=await readFb2(file);
+    } else if(ext==='pdf'){
+      content=await readPdf(file); // devuelve '__PDF_VISUAL__'
     } else {
-      // Para formatos no soportados directamente: guardamos el nombre y avisamos
-      content = `[Formato ${fmt} — el texto completo no puede mostrarse en la app web.\n\nNombre: ${file.name}\nTamaño: ${(file.size/1024).toFixed(1)} KB\n\nSugerencia: usá la versión APK instalada en tu celular para abrir este tipo de archivo.]`;
+      content=`[Formato ${fmt} no soportado directamente en la app web.\n\nArchivo: ${file.name}\nTamaño: ${(file.size/1024).toFixed(1)} KB]`;
     }
 
-    const book = { id, title, fmt, author: '', progress: 0, fav: false, content, added: Date.now() };
+    const book={ id, title, fmt, author, progress:0, fav:false, content, chapters: chapters.length>0?chapters:null, added:Date.now() };
     library.unshift(book);
-    saveLibrary();
+    saveLib();
     hideLoading();
     openBook(id);
-
-  } catch(err) {
+  } catch(err){
     hideLoading();
-    showToast('Error al abrir el archivo: ' + err.message);
+    showToast('Error: '+err.message);
   }
 }
 
-function readAsText(file) {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = e => res(e.target.result);
-    r.onerror = () => rej(new Error('No se pudo leer el archivo'));
-    r.readAsText(file, 'UTF-8');
-  });
+function readText(file){
+  return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=e=>res(e.target.result); r.onerror=()=>rej(new Error('No se pudo leer')); r.readAsText(file,'UTF-8'); });
 }
 
-async function readEpub(file) {
-  const zip = await JSZip.loadAsync(file);
-  // Buscar archivos de contenido
-  let texts = [];
-  const keys = Object.keys(zip.files).filter(k => k.endsWith('.html') || k.endsWith('.htm') || k.endsWith('.xhtml'));
-  // ordenar alfabéticamente
-  keys.sort();
-  for (const k of keys.slice(0, 30)) {
-    const raw = await zip.files[k].async('string');
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(raw, 'text/html');
-    const body = doc.body;
-    if (body) {
-      // eliminar scripts y estilos
-      body.querySelectorAll('script,style').forEach(el => el.remove());
-      const t = body.innerText.trim();
-      if (t.length > 50) texts.push(t);
+async function readEpub(file){
+  const zip=await JSZip.loadAsync(file);
+
+  // Leer OPF para orden de capítulos y metadatos
+  let opfPath='', opfContent='', author='';
+  const containerXml=await zip.files['META-INF/container.xml']?.async('string');
+  if(containerXml){
+    const m=containerXml.match(/full-path="([^"]+\.opf)"/i);
+    if(m) opfPath=m[1];
+  }
+  const opfDir=opfPath.includes('/')?opfPath.substring(0,opfPath.lastIndexOf('/')+1):'';
+
+  let orderedItems=[];
+  if(opfPath && zip.files[opfPath]){
+    opfContent=await zip.files[opfPath].async('string');
+    // autor
+    const am=opfContent.match(/<dc:creator[^>]*>([^<]+)<\/dc:creator>/i);
+    if(am) author=am[1].trim();
+    // spine order
+    const spineIds=[...opfContent.matchAll(/idref="([^"]+)"/gi)].map(m=>m[1]);
+    const manifestMap={};
+    [...opfContent.matchAll(/<item[^>]+id="([^"]+)"[^>]+href="([^"]+)"/gi)].forEach(m=>{ manifestMap[m[1]]=m[2]; });
+    orderedItems=spineIds.map(id=>manifestMap[id]).filter(Boolean).map(href=>opfDir+href);
+  }
+
+  // Si no hay OPF, usar todos los html ordenados
+  if(!orderedItems.length){
+    orderedItems=Object.keys(zip.files).filter(k=>k.match(/\.(html|htm|xhtml)$/i)).sort();
+  }
+
+  // Precargar imágenes como dataURL
+  const imageCache={};
+  for(const [path, zipFile] of Object.entries(zip.files)){
+    if(path.match(/\.(jpg|jpeg|png|gif|svg|webp)$/i)){
+      try{
+        const blob=await zipFile.async('blob');
+        const mime=path.endsWith('.svg')?'image/svg+xml':path.endsWith('.png')?'image/png':'image/jpeg';
+        imageCache[path]=await blobToDataUrl(new Blob([blob],{type:mime}));
+        // también guardar sin directorio
+        const fname=path.split('/').pop();
+        imageCache[fname]=imageCache[path];
+      }catch(e){}
     }
   }
-  if (!texts.length) throw new Error('No se pudo extraer texto del EPUB');
-  return texts.join('\n\n─────\n\n');
-}
 
-async function readFb2(file) {
-  const raw = await readAsText(file);
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(raw, 'text/xml');
-  const paras = doc.querySelectorAll('p');
-  if (!paras.length) return raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
-  return Array.from(paras).map(p => p.textContent.trim()).filter(t => t).join('\n\n');
-}
-
-async function readPdf(file) {
-  const pdfjsLib = window['pdfjs-dist/build/pdf'];
-  if (!pdfjsLib) throw new Error('Librería PDF no cargada');
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  const arrayBuf = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuf }).promise;
-  let full = '';
-  const maxPages = Math.min(pdf.numPages, 50);
-  for (let i = 1; i <= maxPages; i++) {
-    const page = await pdf.getPage(i);
-    const tc = await page.getTextContent();
-    const pageText = tc.items.map(item => item.str).join(' ');
-    full += pageText + '\n\n';
+  // Parsear capítulos
+  const chapters=[];
+  for(const itemPath of orderedItems){
+    if(!zip.files[itemPath]) continue;
+    const raw=await zip.files[itemPath].async('string');
+    const doc=new DOMParser().parseFromString(raw,'text/html');
+    // reemplazar imágenes con dataURL
+    doc.querySelectorAll('img').forEach(img=>{
+      let src=img.getAttribute('src')||'';
+      src=src.replace(/^\.\.?\//,'');
+      const fname=src.split('/').pop();
+      const fullPath=opfDir+src;
+      const dataUrl=imageCache[fullPath]||imageCache[fname]||imageCache[src]||'';
+      if(dataUrl) img.src=dataUrl;
+      else img.remove();
+    });
+    // limpiar scripts/styles
+    doc.querySelectorAll('script,style').forEach(el=>el.remove());
+    const title=doc.querySelector('title,h1,h2')?.textContent?.trim()||('Cap. '+(chapters.length+1));
+    const html=doc.body?doc.body.innerHTML:'';
+    const text=doc.body?doc.body.innerText.trim():'';
+    if(text.length>30||html.includes('<img')) chapters.push({title,html,text});
   }
-  if (!full.trim()) throw new Error('El PDF no tiene texto extraíble (puede ser escaneado)');
-  return full;
+  if(!chapters.length) throw new Error('No se pudo extraer contenido del EPUB');
+  return {chapters, author};
 }
 
-// ══════════════════════════════════════════
-//  ABRIR LIBRO EN LECTOR
-// ══════════════════════════════════════════
-function openBook(id) {
-  const book = library.find(b => b.id === id);
-  if (!book) return;
-  currentBookId = id;
+function blobToDataUrl(blob){
+  return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=e=>res(e.target.result); r.onerror=rej; r.readAsDataURL(blob); });
+}
 
-  document.getElementById('reader-title').textContent = book.title;
-  const body = document.getElementById('reader-body');
-  body.style.fontSize = readerFontSz + 'px';
+async function readFb2(file){
+  const raw=await readText(file);
+  const doc=new DOMParser().parseFromString(raw,'text/xml');
+  const paras=doc.querySelectorAll('p');
+  if(!paras.length) return raw.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ');
+  return Array.from(paras).map(p=>p.textContent.trim()).filter(t=>t).join('\n\n');
+}
 
-  // Mostrar contenido
-  const lines = (book.content || '').split('\n').map(l => `<p>${esc(l) || '&nbsp;'}</p>`).join('');
-  body.innerHTML = lines || '<p style="color:var(--text2)">Documento vacío</p>';
+async function readPdf(file){
+  const pdfjsLib=window['pdfjs-dist/build/pdf'];
+  if(!pdfjsLib) throw new Error('PDF.js no disponible');
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const buf=await file.arrayBuffer();
+  // Guardamos el ArrayBuffer en el objeto libro para renderizar después
+  window._pdfBuffer=buf;
+  window._pdfFile=file;
+  return '__PDF_VISUAL__'; // marcador especial
+}
 
-  // Restaurar posición
-  setTimeout(() => {
-    if (book.scrollPos) body.scrollTop = book.scrollPos;
-  }, 100);
+// Renderizar PDF visual página por página
+let _pdfDoc=null;
+let _pdfCurrentPage=1;
+let _pdfTotal=0;
 
-  // Corazón
+async function renderPdfVisual(bookId){
+  const pdfjsLib=window['pdfjs-dist/build/pdf'];
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  showLoading('Abriendo PDF…');
+  try{
+    const buf=window._pdfBuffer;
+    _pdfDoc=await pdfjsLib.getDocument({data:buf}).promise;
+    _pdfTotal=_pdfDoc.numPages;
+    _pdfCurrentPage=1;
+    // restaurar página guardada
+    const book=library.find(b=>b.id===bookId);
+    if(book&&book.pdfPage) _pdfCurrentPage=book.pdfPage;
+    hideLoading();
+    await renderPdfPage(_pdfCurrentPage);
+  }catch(e){
+    hideLoading();
+    showToast('Error al abrir PDF: '+e.message);
+  }
+}
+
+async function renderPdfPage(pageNum){
+  if(!_pdfDoc) return;
+  showLoading('Renderizando página '+pageNum+' de '+_pdfTotal+'…');
+  const page=await _pdfDoc.getPage(pageNum);
+  // Escalar al ancho del contenedor
+  const container=document.getElementById('reader-body');
+  const containerW=container.clientWidth||window.innerWidth;
+  const viewport0=page.getViewport({scale:1});
+  const scale=Math.min((containerW-8)/viewport0.width, 2.5);
+  const viewport=page.getViewport({scale});
+
+  const canvas=document.createElement('canvas');
+  canvas.width=viewport.width;
+  canvas.height=viewport.height;
+  canvas.style.cssText='width:100%;display:block;margin:0 auto;border-radius:4px;box-shadow:0 2px 12px rgba(0,0,0,0.4);';
+
+  const ctx=canvas.getContext('2d');
+  await page.render({canvasContext:ctx, viewport}).promise;
+
+  container.innerHTML='';
+  container.classList.add('pdf-mode');
+  container.appendChild(canvas);
+  container.scrollTop=0;
+  hideLoading();
+
+  // Actualizar info y progreso
+  _pdfCurrentPage=pageNum;
+  const pct=Math.round((pageNum/_pdfTotal)*100);
+  document.getElementById('reader-progress').style.width=pct+'%';
+  document.getElementById('reader-info').textContent=`Pág. ${pageNum} de ${_pdfTotal}`;
+  document.getElementById('btn-prev').style.display=pageNum>1?'flex':'none';
+  document.getElementById('btn-next').style.display=pageNum<_pdfTotal?'flex':'none';
+
+  // Guardar página en libro
+  if(currentBookId){
+    const book=library.find(b=>b.id===currentBookId);
+    if(book){ book.pdfPage=pageNum; book.progress=pct; saveLib(); }
+  }
+}
+
+function prevPdfPage(){ if(_pdfCurrentPage>1) renderPdfPage(_pdfCurrentPage-1); }
+function nextPdfPage(){ if(_pdfCurrentPage<_pdfTotal) renderPdfPage(_pdfCurrentPage+1); }
+
+// ═══════════ ABRIR LIBRO EN LECTOR ═══════════
+function openBook(id){
+  const book=library.find(b=>b.id===id);
+  if(!book) return;
+  currentBookId=id;
+  document.getElementById('reader-title').textContent=book.title;
+  document.getElementById('reader-body').style.fontSize=readerFontSz+'px';
   updateFavBtn(book.fav);
-  document.getElementById('reader-progress').style.width = book.progress + '%';
-  document.getElementById('reader-info').textContent = book.progress + '% leído';
 
+  // Resetear controles
+  epubChapters=[];
+  _pdfDoc=null;
+  document.getElementById('reader-body').classList.remove('pdf-mode');
+  document.getElementById('chapter-nav').style.display='none';
+  document.getElementById('btn-prev').style.display='none';
+  document.getElementById('btn-next').style.display='none';
+
+  if(book.chapters && book.chapters.length>0){
+    // EPUB con capítulos
+    epubChapters=book.chapters;
+    currentChapter=book.lastChapter||0;
+    renderChapterNav();
+    showChapter(currentChapter);
+    document.getElementById('chapter-nav').style.display='flex';
+    document.getElementById('btn-prev').style.display=currentChapter>0?'flex':'none';
+    document.getElementById('btn-next').style.display=currentChapter<epubChapters.length-1?'flex':'none';
+
+  } else if(book.content==='__PDF_VISUAL__'){
+    // PDF visual: renderizar con canvas
+    document.getElementById('reader-body').innerHTML='<p style="color:var(--text2);text-align:center;padding:40px">Cargando PDF…</p>';
+    goScreen('reader');
+    // reasignar botones para PDF
+    document.getElementById('btn-prev').onclick=prevPdfPage;
+    document.getElementById('btn-next').onclick=nextPdfPage;
+    renderPdfVisual(id);
+    return; // goScreen ya fue llamado
+
+  } else {
+    // TXT / FB2 / HTML — texto plano con scroll
+    const body=document.getElementById('reader-body');
+    body.style.fontSize=readerFontSz+'px';
+    const lines=(book.content||'').split('\n').map(l=>`<p>${esc(l)||'&nbsp;'}</p>`).join('');
+    body.innerHTML=lines||'<p style="color:var(--text2)">Documento vacío</p>';
+    setTimeout(()=>{ if(book.scrollPos) body.scrollTop=book.scrollPos; },80);
+  }
+
+  document.getElementById('reader-progress').style.width=(book.progress||0)+'%';
+  document.getElementById('reader-info').textContent=(book.progress||0)+'% leído';
   goScreen('reader');
 }
 
-function continueReading() {
-  const lastRead = library.find(b => b.progress > 0 && b.progress < 100);
-  if (lastRead) openBook(lastRead.id);
+function continueReading(){
+  const b=library.find(b=>b.progress>0&&b.progress<100);
+  if(b) openBook(b.id);
 }
 
-function onReaderScroll() {
-  const body = document.getElementById('reader-body');
-  const pct = Math.round((body.scrollTop / (body.scrollHeight - body.clientHeight || 1)) * 100);
-  const progress = Math.min(100, Math.max(0, pct));
-  document.getElementById('reader-progress').style.width = progress + '%';
-  document.getElementById('reader-info').textContent = progress + '% leído';
-  if (currentBookId) {
-    const book = library.find(b => b.id === currentBookId);
-    if (book) {
-      book.progress = progress;
-      book.scrollPos = body.scrollTop;
-      saveLibrary();
-    }
+// ═══════════ CAPÍTULOS EPUB ═══════════
+function renderChapterNav(){
+  const nav=document.getElementById('chapter-nav');
+  nav.innerHTML=epubChapters.map((c,i)=>
+    `<button class="ch-btn${i===currentChapter?' active':''}" onclick="showChapter(${i})">${esc(c.title.substring(0,20))}</button>`
+  ).join('');
+}
+
+function showChapter(idx){
+  if(idx<0||idx>=epubChapters.length) return;
+  currentChapter=idx;
+  const body=document.getElementById('reader-body');
+  body.innerHTML=epubChapters[idx].html||'<p>Capítulo vacío</p>';
+  body.scrollTop=0;
+  // actualizar botones nav
+  document.getElementById('btn-prev').style.display=idx>0?'flex':'none';
+  document.getElementById('btn-next').style.display=idx<epubChapters.length-1?'flex':'none';
+  // actualizar chips
+  document.querySelectorAll('.ch-btn').forEach((b,i)=>b.classList.toggle('active',i===idx));
+  // guardar en libro
+  if(currentBookId){
+    const book=library.find(b=>b.id===currentBookId);
+    if(book){ book.lastChapter=idx; book.progress=Math.round((idx/(epubChapters.length-1||1))*100); saveLib(); }
+    document.getElementById('reader-progress').style.width=(library.find(b=>b.id===currentBookId)?.progress||0)+'%';
+    document.getElementById('reader-info').textContent=`Cap. ${idx+1} de ${epubChapters.length}`;
   }
 }
 
-function readerFontSize(delta) {
-  readerFontSz = Math.max(12, Math.min(28, readerFontSz + delta));
-  document.getElementById('reader-body').style.fontSize = readerFontSz + 'px';
+function prevChapter(){ showChapter(currentChapter-1); }
+function nextChapter(){ showChapter(currentChapter+1); }
+function handlePrev(){ if(_pdfDoc) prevPdfPage(); else prevChapter(); }
+function handleNext(){ if(_pdfDoc) nextPdfPage(); else nextChapter(); }
+
+// ═══════════ SCROLL (PDF/TXT) ═══════════
+function onReaderScroll(){
+  if(epubChapters.length>0) return; // epub usa capítulos
+  const body=document.getElementById('reader-body');
+  const pct=Math.round((body.scrollTop/(body.scrollHeight-body.clientHeight||1))*100);
+  const progress=Math.min(100,Math.max(0,pct));
+  document.getElementById('reader-progress').style.width=progress+'%';
+  document.getElementById('reader-info').textContent=progress+'% leído';
+  if(currentBookId){
+    const book=library.find(b=>b.id===currentBookId);
+    if(book){ book.progress=progress; book.scrollPos=body.scrollTop; saveLib(); }
+  }
 }
 
-function toggleFav() {
-  if (!currentBookId) return;
-  const book = library.find(b => b.id === currentBookId);
-  if (!book) return;
-  book.fav = !book.fav;
-  saveLibrary();
+// ═══════════ FAV ═══════════
+function toggleFav(){
+  if(!currentBookId) return;
+  const book=library.find(b=>b.id===currentBookId);
+  if(!book) return;
+  book.fav=!book.fav; saveLib();
   updateFavBtn(book.fav);
-  showToast(book.fav ? '❤️ Agregado a favoritos' : 'Eliminado de favoritos');
+  showToast(book.fav?'❤️ Agregado a favoritos':'Eliminado de favoritos');
+}
+function updateFavBtn(fav){
+  const svg=document.getElementById('fav-btn').querySelector('svg');
+  svg.style.fill=fav?'var(--accent)':'none';
+  svg.style.stroke=fav?'var(--accent)':'currentColor';
 }
 
-function updateFavBtn(fav) {
-  const btn = document.getElementById('fav-btn');
-  btn.querySelector('svg').style.fill = fav ? 'var(--accent)' : 'none';
-  btn.querySelector('svg').style.stroke = fav ? 'var(--accent)' : 'currentColor';
+// ═══════════ MODO OSCURO ═══════════
+// App oscura por defecto como Palabra Diaria
+function applyDark(dark){
+  isDark=dark;
+  // El CSS ya es oscuro por defecto, toggle para modo claro
+  document.documentElement.style.setProperty('--bg',     dark?'#0D0D1A':'#F5F5F5');
+  document.documentElement.style.setProperty('--bg2',    dark?'#1A1A2E':'#E8E8F0');
+  document.documentElement.style.setProperty('--card',   dark?'#1E1E32':'#FFFFFF');
+  document.documentElement.style.setProperty('--navbar', dark?'#0D0D1A':'#FFFFFF');
+  document.documentElement.style.setProperty('--text',   dark?'#E8E4D8':'#1C1C2E');
+  document.documentElement.style.setProperty('--text2',  dark?'#9090B0':'#6060A0');
+  document.documentElement.style.setProperty('--border', dark?'rgba(124,58,237,0.18)':'rgba(124,58,237,0.25)');
+  document.getElementById('toggle-dark').classList.toggle('on',dark);
+  document.getElementById('dark-sub').textContent=dark?'Activado':'Desactivado';
+  try{ localStorage.setItem('ll_dark',dark?'1':'0'); }catch(e){}
 }
+function toggleDark(){ applyDark(!isDark); }
 
-// ══════════════════════════════════════════
-//  MODO OSCURO
-// ══════════════════════════════════════════
-function toggleDark() {
-  isDark = !isDark;
-  document.body.classList.toggle('dark', isDark);
-  document.getElementById('toggle-dark').classList.toggle('on', isDark);
-  document.getElementById('dark-sub').textContent = isDark ? 'Activado' : 'Desactivado';
-  const icon = document.getElementById('dark-icon');
-  if (isDark) {
-    icon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
-  } else {
-    icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
-  }
-  try { localStorage.setItem('ll_dark', isDark ? '1' : '0'); } catch(e){}
+function changeFontSize(d){
+  readerFontSz=Math.max(12,Math.min(28,readerFontSz+d));
+  document.getElementById('font-sub').textContent=readerFontSz+'px';
+  document.getElementById('reader-body').style.fontSize=readerFontSz+'px';
 }
+function selectLang(el){ document.querySelectorAll('.lang-option').forEach(o=>o.classList.remove('active')); el.classList.add('active'); }
 
-function changeFontSize(d) {
-  readerFontSz = Math.max(12, Math.min(28, readerFontSz + d));
-  document.getElementById('font-sub').textContent = 'Tamaño: ' + readerFontSz + 'px';
-  document.getElementById('reader-body').style.fontSize = readerFontSz + 'px';
-}
+// ═══════════ MODAL ═══════════
+function openModal(){ const m=document.getElementById('modal'); m.style.display='flex'; requestAnimationFrame(()=>m.classList.add('show')); }
+function closeModal(){ const m=document.getElementById('modal'); m.classList.remove('show'); setTimeout(()=>m.style.display='none',300); }
+function closeModalOutside(e){ if(e.target===document.getElementById('modal')) closeModal(); }
 
-function selectLang(el) {
-  document.querySelectorAll('.lang-option').forEach(o => o.classList.remove('active'));
-  el.classList.add('active');
-}
+// ═══════════ UI UTILS ═══════════
+function showLoading(msg){ document.getElementById('loading-text').textContent=msg||'Cargando…'; document.getElementById('loading').style.display='flex'; }
+function hideLoading(){ document.getElementById('loading').style.display='none'; }
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
 
-// ══════════════════════════════════════════
-//  MODAL
-// ══════════════════════════════════════════
-function openModal() {
-  const m = document.getElementById('modal');
-  m.style.display = 'flex';
-  requestAnimationFrame(() => m.classList.add('show'));
-}
-function closeModal() {
-  const m = document.getElementById('modal');
-  m.classList.remove('show');
-  setTimeout(() => { m.style.display = 'none'; }, 300);
-}
-function closeModalOutside(e) {
-  if (e.target === document.getElementById('modal')) closeModal();
-}
-
-// ══════════════════════════════════════════
-//  LOADING / TOAST
-// ══════════════════════════════════════════
-function showLoading(msg) {
-  document.getElementById('loading-text').textContent = msg || 'Cargando…';
-  document.getElementById('loading').style.display = 'flex';
-}
-function hideLoading() { document.getElementById('loading').style.display = 'none'; }
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
-
-// ══════════════════════════════════════════
-//  UTILS
-// ══════════════════════════════════════════
-function esc(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// ══════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════
-window.addEventListener('DOMContentLoaded', () => {
-  loadLibrary();
-  try { if (localStorage.getItem('ll_dark') === '1') toggleDark(); } catch(e){}
-  renderHome();
-  renderSearch();
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/Librolibre/sw.js').catch(()=>{});
-  }
+// ═══════════ INIT ═══════════
+window.addEventListener('DOMContentLoaded',()=>{
+  loadLib();
+  const savedDark=localStorage.getItem('ll_dark');
+  applyDark(savedDark===null?true:savedDark==='1'); // oscuro por defecto
+  renderHome(); renderSearch();
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('/Librolibre/sw.js').catch(()=>{});
 });
 </script>
 </body>
