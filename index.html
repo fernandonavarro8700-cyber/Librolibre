@@ -12,6 +12,7 @@
   <link rel="icon" href="icons/icon-192.png"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/node-unrar-js@2.0.0/dist/js/unrar.min.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
@@ -326,8 +327,10 @@
     }
     /* Cuando hay canvas PDF, fondo neutro oscuro */
     .reader-body.pdf-mode{
-      background:#1a1a1a;
-      padding:12px 4px;
+      background:#111;
+      padding:6px 4px;
+      overflow-y:auto !important;
+      -webkit-overflow-scrolling:touch;
     }
     /* Imágenes dentro del epub */
     .reader-body img{
@@ -832,14 +835,8 @@ async function processFile(file){
       content='__CBZ__';
 
     } else if(ext==='cbr'){
-      // CBR es RAR — no tiene soporte nativo en browsers
-      // Intentamos como ZIP (algunos CBR son ZIP renombrados)
-      try{
-        chapters=await readCbz(file);
-        content='__CBZ__';
-      } catch(e){
-        throw new Error('El archivo CBR usa formato RAR que no puede abrirse en app web. Convertilo a CBZ para leerlo aquí.');
-      }
+      chapters=await readCbr(file);
+      content='__CBZ__';
 
     } else {
       content=`[Formato ${fmt} no soportado en la versión web.\n\nArchivo: ${file.name}\nTamaño: ${(file.size/1024).toFixed(1)} KB\n\nFormatos soportados: EPUB, PDF, TXT, FB2, HTML, CBZ]`;
@@ -864,8 +861,8 @@ function readText(file){
 async function readEpub(file){
   const zip=await JSZip.loadAsync(file);
 
-  // Leer OPF para orden de capítulos y metadatos
-  let opfPath='', opfContent='', author='';
+  // 1. Leer container.xml para encontrar el OPF
+  let opfPath='', opfContent='', author='', bookTitle='';
   const containerXml=await zip.files['META-INF/container.xml']?.async('string');
   if(containerXml){
     const m=containerXml.match(/full-path="([^"]+\.opf)"/i);
@@ -873,64 +870,140 @@ async function readEpub(file){
   }
   const opfDir=opfPath.includes('/')?opfPath.substring(0,opfPath.lastIndexOf('/')+1):'';
 
-  let orderedItems=[];
+  // 2. Leer OPF: spine, manifest, metadatos
+  let spineItems=[];   // [{id, href, fullPath}]
+  const manifestMap={}; // id -> href
   if(opfPath && zip.files[opfPath]){
     opfContent=await zip.files[opfPath].async('string');
-    // autor
     const am=opfContent.match(/<dc:creator[^>]*>([^<]+)<\/dc:creator>/i);
     if(am) author=am[1].trim();
-    // spine order
+    const tm=opfContent.match(/<dc:title[^>]*>([^<]+)<\/dc:title>/i);
+    if(tm) bookTitle=tm[1].trim();
+    // manifest: id -> href
+    [...opfContent.matchAll(/<item\s[^>]*>/gi)].forEach(m=>{
+      const idM=m[0].match(/\bid="([^"]+)"/i);
+      const hrefM=m[0].match(/\bhref="([^"]+)"/i);
+      if(idM&&hrefM) manifestMap[idM[1]]=hrefM[1];
+    });
+    // spine: orden de idref
     const spineIds=[...opfContent.matchAll(/idref="([^"]+)"/gi)].map(m=>m[1]);
-    const manifestMap={};
-    [...opfContent.matchAll(/<item[^>]+id="([^"]+)"[^>]+href="([^"]+)"/gi)].forEach(m=>{ manifestMap[m[1]]=m[2]; });
-    orderedItems=spineIds.map(id=>manifestMap[id]).filter(Boolean).map(href=>opfDir+href);
+    spineItems=spineIds.map(id=>({
+      id, href:manifestMap[id]||'',
+      fullPath: manifestMap[id] ? (opfDir+manifestMap[id]).replace(/\.\.\//g,'') : ''
+    })).filter(s=>s.href);
   }
 
-  // Si no hay OPF, usar todos los html ordenados
-  if(!orderedItems.length){
-    orderedItems=Object.keys(zip.files).filter(k=>k.match(/\.(html|htm|xhtml)$/i)).sort();
+  if(!spineItems.length){
+    // fallback: todos los html del zip en orden
+    Object.keys(zip.files).filter(k=>k.match(/\.(html|htm|xhtml)$/i)).sort()
+      .forEach(p=>spineItems.push({id:p,href:p,fullPath:p}));
   }
 
-  // Precargar imágenes como dataURL
+  // 3. Leer NCX (EPUB2) o NAV (EPUB3) para títulos reales de los capítulos
+  // Construimos un mapa: nombreArchivo -> título real
+  const titleMap={}; // fullPath normalizado -> título
+
+  // Buscar NCX en el manifest
+  const ncxEntry=Object.entries(manifestMap).find(([id,href])=>href.match(/\.ncx$/i));
+  if(ncxEntry){
+    const ncxPath=opfDir+ncxEntry[1];
+    const ncxFile=zip.files[ncxPath]||zip.files[ncxEntry[1]];
+    if(ncxFile){
+      const ncxXml=await ncxFile.async('string');
+      // Parsear navPoints del NCX
+      [...ncxXml.matchAll(/<navPoint[^>]*>[\s\S]*?<navLabel>[\s\S]*?<text>([^<]+)<\/text>[\s\S]*?<content\s+src="([^"#]+)[^"]*"/gi)]
+        .forEach(m=>{
+          const label=m[1].trim();
+          const src=m[2].replace(/^.*\//,''); // solo el nombre de archivo
+          titleMap[src]=label;
+          // también guardar ruta completa
+          titleMap[opfDir+m[2]]=label;
+        });
+    }
+  }
+
+  // Buscar NAV (EPUB3) en el manifest
+  const navEntry=Object.entries(manifestMap).find(([id,href])=>href.match(/nav.*\.x?html$/i)||id==='nav'||id==='toc');
+  if(navEntry){
+    const navPath=opfDir+navEntry[1];
+    const navFile=zip.files[navPath]||zip.files[navEntry[1]];
+    if(navFile){
+      const navHtml=await navFile.async('string');
+      [...navHtml.matchAll(/<a[^>]+href="([^"#]+)[^"]*"[^>]*>([\s\S]*?)<\/a>/gi)]
+        .forEach(m=>{
+          const href=m[1].trim();
+          const label=m[2].replace(/<[^>]+>/g,'').trim();
+          if(label&&href){
+            const fname=href.split('/').pop();
+            titleMap[fname]=label;
+            titleMap[opfDir+href]=label;
+          }
+        });
+    }
+  }
+
+  // 4. Precargar imágenes como dataURL
   const imageCache={};
   for(const [path, zipFile] of Object.entries(zip.files)){
     if(path.match(/\.(jpg|jpeg|png|gif|svg|webp)$/i)){
       try{
         const blob=await zipFile.async('blob');
         const mime=path.endsWith('.svg')?'image/svg+xml':path.endsWith('.png')?'image/png':'image/jpeg';
-        imageCache[path]=await blobToDataUrl(new Blob([blob],{type:mime}));
-        // también guardar sin directorio
-        const fname=path.split('/').pop();
-        imageCache[fname]=imageCache[path];
+        const dataUrl=await blobToDataUrl(new Blob([blob],{type:mime}));
+        imageCache[path]=dataUrl;
+        imageCache[path.split('/').pop()]=dataUrl;
+        // también sin opfDir
+        if(path.startsWith(opfDir)) imageCache[path.slice(opfDir.length)]=dataUrl;
       }catch(e){}
     }
   }
 
-  // Parsear capítulos
+  // 5. Parsear capítulos en orden del spine
   const chapters=[];
-  for(const itemPath of orderedItems){
-    if(!zip.files[itemPath]) continue;
-    const raw=await zip.files[itemPath].async('string');
+  for(const item of spineItems){
+    const fpath=item.fullPath||item.href;
+    // buscar el archivo en el zip (tolerante a rutas)
+    const zipFile=zip.files[fpath]||zip.files[opfDir+item.href]||zip.files[item.href];
+    if(!zipFile) continue;
+
+    const raw=await zipFile.async('string');
     const doc=new DOMParser().parseFromString(raw,'text/html');
-    // reemplazar imágenes con dataURL
-    doc.querySelectorAll('img').forEach(img=>{
-      let src=img.getAttribute('src')||'';
-      src=src.replace(/^\.\.?\//,'');
+
+    // Reemplazar imágenes
+    doc.querySelectorAll('img,image').forEach(img=>{
+      let src=img.getAttribute('src')||img.getAttribute('xlink:href')||'';
+      src=src.replace(/^(\.\.\/)+/,'');
       const fname=src.split('/').pop();
-      const fullPath=opfDir+src;
-      const dataUrl=imageCache[fullPath]||imageCache[fname]||imageCache[src]||'';
-      if(dataUrl) img.src=dataUrl;
+      const fullImg=opfDir+src;
+      const dataUrl=imageCache[fullImg]||imageCache[fname]||imageCache[src]||'';
+      if(dataUrl){ img.src=dataUrl; img.removeAttribute('xlink:href'); }
       else img.remove();
     });
-    // limpiar scripts/styles
-    doc.querySelectorAll('script,style').forEach(el=>el.remove());
-    const title=doc.querySelector('title,h1,h2')?.textContent?.trim()||('Cap. '+(chapters.length+1));
+    doc.querySelectorAll('script,style,link').forEach(el=>el.remove());
+
     const html=doc.body?doc.body.innerHTML:'';
     const text=doc.body?doc.body.innerText.trim():'';
-    if(text.length>30||html.includes('<img')) chapters.push({title,html,text});
+    if(text.length<20&&!html.includes('<img')) continue; // saltar páginas vacías
+
+    // Título: primero buscar en NCX/NAV, luego en el HTML
+    const fname=fpath.split('/').pop();
+    const hrefFname=item.href.split('/').pop();
+    let title= titleMap[fpath]
+            || titleMap[fname]
+            || titleMap[hrefFname]
+            || titleMap[opfDir+item.href]
+            || doc.querySelector('title')?.textContent?.trim()
+            || doc.querySelector('h1,h2,h3')?.textContent?.trim()
+            || ('Cap. '+(chapters.length+1));
+
+    // Limpiar título muy largo
+    if(title.length>40) title=title.substring(0,38)+'…';
+
+    chapters.push({title, html, text});
   }
+
   if(!chapters.length) throw new Error('No se pudo extraer contenido del EPUB');
-  return {chapters, author};
+  return {chapters, author, bookTitle};
 }
 
 function blobToDataUrl(blob){
@@ -960,15 +1033,48 @@ async function readCbz(file){
     const mime=ext==='png'?'image/png':ext==='gif'?'image/gif':ext==='webp'?'image/webp':'image/jpeg';
     const dataUrl=await blobToDataUrl(new Blob([blob],{type:mime}));
     chapters.push({
-      title:`Página ${i+1}`,
-      html:`<img src="${dataUrl}" style="width:100%;display:block;border-radius:4px" />`,
+      title:`Pág. ${i+1}`,
+      html:`<img src="${dataUrl}" style="width:100%;display:block;margin-bottom:8px;border-radius:4px" />`,
       text:''
     });
   }
   return chapters;
 }
 
-// Renderizar PDF visual página por página
+// readCbr: intenta unrar.js, si falla intenta como ZIP
+async function readCbr(file){
+  // Primero intentar como ZIP (muchos CBR son ZIP renombrados)
+  try{
+    return await readCbz(file);
+  }catch(e){}
+  // Intentar con unrar.js si está disponible
+  if(window.createExtractorFromData){
+    try{
+      const buf=await file.arrayBuffer();
+      const extractor=await window.createExtractorFromData({data:buf});
+      const list=[...extractor.getFileList().fileHeaders];
+      const imgList=list.filter(h=>h.name.match(/\.(jpg|jpeg|png|webp)$/i))
+        .sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
+      if(!imgList.length) throw new Error('Sin imágenes en CBR');
+      const chapters=[];
+      for(let i=0;i<imgList.length;i++){
+        document.getElementById('loading-text').textContent=`Extrayendo página ${i+1} de ${imgList.length}…`;
+        const extracted=[...extractor.extract({files:[imgList[i].name]}).files];
+        if(!extracted.length) continue;
+        const data=extracted[0].extraction;
+        const ext=imgList[i].name.split('.').pop().toLowerCase();
+        const mime=ext==='png'?'image/png':'image/jpeg';
+        const blob=new Blob([data],{type:mime});
+        const dataUrl=await blobToDataUrl(blob);
+        chapters.push({title:`Pág. ${i+1}`,html:`<img src="${dataUrl}" style="width:100%;display:block;margin-bottom:8px;border-radius:4px"/>`,text:''});
+      }
+      if(chapters.length) return chapters;
+    }catch(e2){}
+  }
+  throw new Error('No se pudo abrir el CBR. Convertilo a CBZ con CbxConverter o similar.');
+}
+
+// ── PDF: renderizado visual con scroll continuo ──
 let _pdfDoc=null;
 let _pdfCurrentPage=1;
 let _pdfTotal=0;
@@ -978,66 +1084,85 @@ async function renderPdfVisual(bookId){
   pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   showLoading('Abriendo PDF…');
   try{
-    // Obtener el archivo guardado por ID de libro
     const file=(window._pdfFileStore||{})[bookId];
-    if(!file) throw new Error('Archivo PDF no disponible. Volvé a abrirlo desde tus archivos.');
+    if(!file) throw new Error('Archivo no disponible. Volvé a abrirlo desde tus archivos.');
     const buf=await file.arrayBuffer();
     _pdfDoc=await pdfjsLib.getDocument({data:buf}).promise;
     _pdfTotal=_pdfDoc.numPages;
-    _pdfCurrentPage=1;
-    // restaurar página guardada
     const book=library.find(b=>b.id===bookId);
-    if(book&&book.pdfPage) _pdfCurrentPage=book.pdfPage;
+    _pdfCurrentPage=book?.pdfPage||1;
     hideLoading();
-    await renderPdfPage(_pdfCurrentPage);
+    await renderAllPdfPages(bookId);
   }catch(e){
     hideLoading();
     showToast('Error al abrir PDF: '+e.message);
   }
 }
 
-async function renderPdfPage(pageNum){
-  if(!_pdfDoc) return;
-  showLoading('Renderizando página '+pageNum+' de '+_pdfTotal+'…');
-  const page=await _pdfDoc.getPage(pageNum);
-  // Escalar al ancho del contenedor
+async function renderAllPdfPages(bookId){
   const container=document.getElementById('reader-body');
-  const containerW=container.clientWidth||window.innerWidth;
-  const viewport0=page.getViewport({scale:1});
-  const scale=Math.min((containerW-8)/viewport0.width, 2.5);
-  const viewport=page.getViewport({scale});
-
-  const canvas=document.createElement('canvas');
-  canvas.width=viewport.width;
-  canvas.height=viewport.height;
-  canvas.style.cssText='width:100%;display:block;margin:0 auto;border-radius:4px;box-shadow:0 2px 12px rgba(0,0,0,0.4);';
-
-  const ctx=canvas.getContext('2d');
-  await page.render({canvasContext:ctx, viewport}).promise;
-
   container.innerHTML='';
   container.classList.add('pdf-mode');
-  container.appendChild(canvas);
-  container.scrollTop=0;
-  hideLoading();
+  // desactivar onscroll durante carga
+  container.onscroll=null;
 
-  // Actualizar info y progreso
-  _pdfCurrentPage=pageNum;
-  const pct=Math.round((pageNum/_pdfTotal)*100);
-  document.getElementById('reader-progress').style.width=pct+'%';
-  document.getElementById('reader-info').textContent=`Pág. ${pageNum} de ${_pdfTotal}`;
-  document.getElementById('btn-prev').style.display=pageNum>1?'flex':'none';
-  document.getElementById('btn-next').style.display=pageNum<_pdfTotal?'flex':'none';
+  const containerW=container.clientWidth||window.innerWidth-12;
 
-  // Guardar página en libro
-  if(currentBookId){
-    const book=library.find(b=>b.id===currentBookId);
-    if(book){ book.pdfPage=pageNum; book.progress=pct; saveLib(); }
+  for(let pageNum=1;pageNum<=_pdfTotal;pageNum++){
+    document.getElementById('loading-text').textContent=`Renderizando página ${pageNum} de ${_pdfTotal}…`;
+    if(pageNum===1) showLoading(`Renderizando página 1 de ${_pdfTotal}…`);
+
+    const page=await _pdfDoc.getPage(pageNum);
+    const viewport0=page.getViewport({scale:1});
+    const scale=Math.max(1.2, Math.min((containerW-4)/viewport0.width, 3));
+    const viewport=page.getViewport({scale});
+
+    const canvas=document.createElement('canvas');
+    canvas.width=viewport.width;
+    canvas.height=viewport.height;
+    canvas.style.cssText='width:100%;display:block;margin:0 0 6px;box-shadow:0 1px 8px rgba(0,0,0,0.5);';
+    canvas.dataset.page=pageNum;
+
+    const ctx=canvas.getContext('2d');
+    await page.render({canvasContext:ctx,viewport}).promise;
+    container.appendChild(canvas);
+
+    // Ocultar loading después de la primera página
+    if(pageNum===1){ hideLoading(); container.scrollTop=0; }
   }
-}
 
-function prevPdfPage(){ if(_pdfCurrentPage>1) renderPdfPage(_pdfCurrentPage-1); }
-function nextPdfPage(){ if(_pdfCurrentPage<_pdfTotal) renderPdfPage(_pdfCurrentPage+1); }
+  // Ir a la página guardada
+  const book=library.find(b=>b.id===bookId);
+  if(book?.pdfPage && book.pdfPage>1){
+    const targetCanvas=container.querySelector(`[data-page="${book.pdfPage}"]`);
+    if(targetCanvas) targetCanvas.scrollIntoView();
+  }
+
+  // Ocultar botones Anterior/Siguiente (scroll continuo, no hace falta)
+  document.getElementById('btn-prev').style.display='none';
+  document.getElementById('btn-next').style.display='none';
+  document.getElementById('reader-info').textContent=`${_pdfTotal} páginas`;
+  document.getElementById('reader-progress').style.width='100%';
+
+  // Trackear página visible con IntersectionObserver
+  const observer=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        const pg=parseInt(e.target.dataset.page);
+        _pdfCurrentPage=pg;
+        const pct=Math.round((pg/_pdfTotal)*100);
+        document.getElementById('reader-info').textContent=`Pág. ${pg} de ${_pdfTotal}`;
+        document.getElementById('reader-progress').style.width=pct+'%';
+        if(bookId){
+          const bk=library.find(b=>b.id===bookId);
+          if(bk){ bk.pdfPage=pg; bk.progress=pct; saveLib(); }
+        }
+      }
+    });
+  },{root:container,threshold:0.3});
+
+  container.querySelectorAll('canvas[data-page]').forEach(c=>observer.observe(c));
+}
 
 // ═══════════ ABRIR LIBRO EN LECTOR ═══════════
 function openBook(id){
