@@ -1,4 +1,4 @@
-const CACHE = 'librolibre-v1';
+const CACHE = 'librolibre-v3';
 const ASSETS = [
   '/Librolibre/',
   '/Librolibre/index.html',
