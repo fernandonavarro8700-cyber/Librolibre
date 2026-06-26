@@ -824,18 +824,15 @@ async function processFile(file){
       content=await readFb2(file);
 
     } else if(ext==='pdf'){
-      // Guardamos el archivo directamente en el objeto libro
-      content='__PDF_VISUAL__';
-      window._pdfFileStore=window._pdfFileStore||{};
-      window._pdfFileStore[id]=file;
+      chapters=await readPdfAsImages(file);
+      content='__PDF_PAGES__';
 
     } else if(ext==='cbz'||ext==='cba'){
-      // CBZ es ZIP con imágenes — soportado nativamente
       chapters=await readCbz(file);
       content='__CBZ__';
 
     } else if(ext==='cbr'){
-      chapters=await readCbr(file);
+      chapters=await readCbrReal(file);
       content='__CBZ__';
 
     } else {
@@ -1018,151 +1015,71 @@ async function readFb2(file){
   return Array.from(paras).map(p=>p.textContent.trim()).filter(t=>t).join('\n\n');
 }
 
-// readCbz: lee un CBZ (ZIP de imágenes) y devuelve capítulos con imágenes
+// ═══════════ LECTORES ═══════════
+
+// CBZ: ZIP con imágenes
 async function readCbz(file){
   const zip=await JSZip.loadAsync(file);
   const imgKeys=Object.keys(zip.files)
     .filter(k=>k.match(/\.(jpg|jpeg|png|gif|webp)$/i)&&!zip.files[k].dir)
     .sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
-  if(!imgKeys.length) throw new Error('No se encontraron imágenes en el archivo');
+  if(!imgKeys.length) throw new Error('No se encontraron imágenes en el CBZ');
   const chapters=[];
   for(let i=0;i<imgKeys.length;i++){
-    document.getElementById('loading-text').textContent=`Cargando página ${i+1} de ${imgKeys.length}…`;
+    document.getElementById('loading-text').textContent=`Cargando pág. ${i+1}/${imgKeys.length}…`;
     const blob=await zip.files[imgKeys[i]].async('blob');
-    const ext=imgKeys[i].split('.').pop().toLowerCase();
-    const mime=ext==='png'?'image/png':ext==='gif'?'image/gif':ext==='webp'?'image/webp':'image/jpeg';
+    const e2=imgKeys[i].split('.').pop().toLowerCase();
+    const mime=e2==='png'?'image/png':e2==='gif'?'image/gif':e2==='webp'?'image/webp':'image/jpeg';
     const dataUrl=await blobToDataUrl(new Blob([blob],{type:mime}));
-    chapters.push({
-      title:`Pág. ${i+1}`,
-      html:`<img src="${dataUrl}" style="width:100%;display:block;margin-bottom:8px;border-radius:4px" />`,
-      text:''
-    });
+    chapters.push({title:`Pág. ${i+1}`,html:`<img src="${dataUrl}" style="width:100%;height:auto;display:block;margin-bottom:4px"/>`,text:''});
   }
   return chapters;
 }
 
-// readCbr: intenta unrar.js, si falla intenta como ZIP
-async function readCbr(file){
-  // Primero intentar como ZIP (muchos CBR son ZIP renombrados)
-  try{
-    return await readCbz(file);
-  }catch(e){}
-  // Intentar con unrar.js si está disponible
-  if(window.createExtractorFromData){
-    try{
-      const buf=await file.arrayBuffer();
-      const extractor=await window.createExtractorFromData({data:buf});
-      const list=[...extractor.getFileList().fileHeaders];
-      const imgList=list.filter(h=>h.name.match(/\.(jpg|jpeg|png|webp)$/i))
-        .sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
-      if(!imgList.length) throw new Error('Sin imágenes en CBR');
-      const chapters=[];
-      for(let i=0;i<imgList.length;i++){
-        document.getElementById('loading-text').textContent=`Extrayendo página ${i+1} de ${imgList.length}…`;
-        const extracted=[...extractor.extract({files:[imgList[i].name]}).files];
-        if(!extracted.length) continue;
-        const data=extracted[0].extraction;
-        const ext=imgList[i].name.split('.').pop().toLowerCase();
-        const mime=ext==='png'?'image/png':'image/jpeg';
-        const blob=new Blob([data],{type:mime});
-        const dataUrl=await blobToDataUrl(blob);
-        chapters.push({title:`Pág. ${i+1}`,html:`<img src="${dataUrl}" style="width:100%;display:block;margin-bottom:8px;border-radius:4px"/>`,text:''});
-      }
-      if(chapters.length) return chapters;
-    }catch(e2){}
-  }
-  throw new Error('No se pudo abrir el CBR. Convertilo a CBZ con CbxConverter o similar.');
+// CBR: intenta como ZIP primero (muchos CBR son ZIP renombrados)
+async function readCbrReal(file){
+  try{ const r=await readCbz(file); if(r.length) return r; }catch(e){}
+  throw new Error('Este CBR es formato RAR. Renombrá el archivo a .cbz e intentá de nuevo. Si no abre, usá CbxConverter en tu celular para convertirlo a CBZ.');
 }
 
-// ── PDF: renderizado visual con scroll continuo ──
-let _pdfDoc=null;
-let _pdfCurrentPage=1;
-let _pdfTotal=0;
+// PDF: convierte cada página a imagen JPEG y guarda como capítulos
+// Así el contenido queda guardado en localStorage y no se pierde al recargar
+let _pdfDoc=null, _pdfCurrentPage=1, _pdfTotal=0;
 
-async function renderPdfVisual(bookId){
+async function readPdfAsImages(file){
   const pdfjsLib=window['pdfjs-dist/build/pdf'];
+  if(!pdfjsLib) throw new Error('PDF.js no cargó. Recargá la página e intentá de nuevo.');
   pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  showLoading('Abriendo PDF…');
-  try{
-    const file=(window._pdfFileStore||{})[bookId];
-    if(!file) throw new Error('Archivo no disponible. Volvé a abrirlo desde tus archivos.');
-    const buf=await file.arrayBuffer();
-    _pdfDoc=await pdfjsLib.getDocument({data:buf}).promise;
-    _pdfTotal=_pdfDoc.numPages;
-    const book=library.find(b=>b.id===bookId);
-    _pdfCurrentPage=book?.pdfPage||1;
-    hideLoading();
-    await renderAllPdfPages(bookId);
-  }catch(e){
-    hideLoading();
-    showToast('Error al abrir PDF: '+e.message);
-  }
-}
-
-async function renderAllPdfPages(bookId){
-  const container=document.getElementById('reader-body');
-  container.innerHTML='';
-  container.classList.add('pdf-mode');
-  // desactivar onscroll durante carga
-  container.onscroll=null;
-
-  const containerW=container.clientWidth||window.innerWidth-12;
-
-  for(let pageNum=1;pageNum<=_pdfTotal;pageNum++){
-    document.getElementById('loading-text').textContent=`Renderizando página ${pageNum} de ${_pdfTotal}…`;
-    if(pageNum===1) showLoading(`Renderizando página 1 de ${_pdfTotal}…`);
-
-    const page=await _pdfDoc.getPage(pageNum);
-    const viewport0=page.getViewport({scale:1});
-    const scale=Math.max(1.2, Math.min((containerW-4)/viewport0.width, 3));
-    const viewport=page.getViewport({scale});
-
+  const buf=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  const total=pdf.numPages;
+  const chapters=[];
+  const targetW=Math.min(window.screen.width||390, 760)*window.devicePixelRatio||390;
+  for(let i=1;i<=total;i++){
+    document.getElementById('loading-text').textContent=`Procesando pág. ${i} de ${total}…`;
+    const page=await pdf.getPage(i);
+    const vp0=page.getViewport({scale:1});
+    const scale=Math.min(targetW/vp0.width, 3);
+    const vp=page.getViewport({scale});
     const canvas=document.createElement('canvas');
-    canvas.width=viewport.width;
-    canvas.height=viewport.height;
-    canvas.style.cssText='width:100%;display:block;margin:0 0 6px;box-shadow:0 1px 8px rgba(0,0,0,0.5);';
-    canvas.dataset.page=pageNum;
-
+    canvas.width=Math.floor(vp.width);
+    canvas.height=Math.floor(vp.height);
     const ctx=canvas.getContext('2d');
-    await page.render({canvasContext:ctx,viewport}).promise;
-    container.appendChild(canvas);
-
-    // Ocultar loading después de la primera página
-    if(pageNum===1){ hideLoading(); container.scrollTop=0; }
-  }
-
-  // Ir a la página guardada
-  const book=library.find(b=>b.id===bookId);
-  if(book?.pdfPage && book.pdfPage>1){
-    const targetCanvas=container.querySelector(`[data-page="${book.pdfPage}"]`);
-    if(targetCanvas) targetCanvas.scrollIntoView();
-  }
-
-  // Ocultar botones Anterior/Siguiente (scroll continuo, no hace falta)
-  document.getElementById('btn-prev').style.display='none';
-  document.getElementById('btn-next').style.display='none';
-  document.getElementById('reader-info').textContent=`${_pdfTotal} páginas`;
-  document.getElementById('reader-progress').style.width='100%';
-
-  // Trackear página visible con IntersectionObserver
-  const observer=new IntersectionObserver(entries=>{
-    entries.forEach(e=>{
-      if(e.isIntersecting){
-        const pg=parseInt(e.target.dataset.page);
-        _pdfCurrentPage=pg;
-        const pct=Math.round((pg/_pdfTotal)*100);
-        document.getElementById('reader-info').textContent=`Pág. ${pg} de ${_pdfTotal}`;
-        document.getElementById('reader-progress').style.width=pct+'%';
-        if(bookId){
-          const bk=library.find(b=>b.id===bookId);
-          if(bk){ bk.pdfPage=pg; bk.progress=pct; saveLib(); }
-        }
-      }
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    await page.render({canvasContext:ctx,viewport:vp}).promise;
+    const dataUrl=canvas.toDataURL('image/jpeg',0.90);
+    chapters.push({
+      title:`Pág. ${i}`,
+      html:`<img src="${dataUrl}" style="width:100%;height:auto;display:block;margin-bottom:6px;box-shadow:0 1px 6px rgba(0,0,0,0.4)"/>`,
+      text:''
     });
-  },{root:container,threshold:0.3});
-
-  container.querySelectorAll('canvas[data-page]').forEach(c=>observer.observe(c));
+    canvas.width=1; canvas.height=1; // liberar memoria
+  }
+  if(!chapters.length) throw new Error('No se pudo leer el PDF');
+  return chapters;
 }
+
 
 // ═══════════ ABRIR LIBRO EN LECTOR ═══════════
 function openBook(id){
@@ -1193,15 +1110,15 @@ function openBook(id){
     document.getElementById('btn-prev').style.display=currentChapter>0?'flex':'none';
     document.getElementById('btn-next').style.display=currentChapter<epubChapters.length-1?'flex':'none';
 
-  } else if(book.content==='__PDF_VISUAL__'){
-    // PDF visual: renderizar con canvas
-    document.getElementById('reader-body').innerHTML='<p style="color:var(--text2);text-align:center;padding:40px">Cargando PDF…</p>';
-    goScreen('reader');
-    // reasignar botones para PDF
-    document.getElementById('btn-prev').onclick=prevPdfPage;
-    document.getElementById('btn-next').onclick=nextPdfPage;
-    renderPdfVisual(id);
-    return; // goScreen ya fue llamado
+  } else if(book.content==='__PDF_PAGES__'){
+    // PDF guardado como imágenes — tratar igual que comic
+    epubChapters=book.chapters||[];
+    currentChapter=book.lastChapter||0;
+    renderChapterNav(true); // modo comic: muestra "Pág X de Y"
+    showChapter(currentChapter);
+    document.getElementById('chapter-nav').style.display='flex';
+    document.getElementById('btn-prev').style.display=currentChapter>0?'flex':'none';
+    document.getElementById('btn-next').style.display=currentChapter<epubChapters.length-1?'flex':'none';
 
   } else {
     // TXT / FB2 / HTML — texto plano con scroll
@@ -1241,6 +1158,10 @@ function showChapter(idx){
   const body=document.getElementById('reader-body');
   body.innerHTML=epubChapters[idx].html||'<p>Capítulo vacío</p>';
   body.scrollTop=0;
+  // modo imagen (PDF/comic): sin padding de texto
+  const isImg=epubChapters[idx].text===''&&epubChapters[idx].html.includes('<img');
+  body.style.padding=isImg?'4px 2px':'20px 18px';
+  body.style.fontFamily=isImg?'inherit':'Georgia, serif';
   // actualizar botones nav
   document.getElementById('btn-prev').style.display=idx>0?'flex':'none';
   document.getElementById('btn-next').style.display=idx<epubChapters.length-1?'flex':'none';
