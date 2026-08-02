@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>LibroLibre — Tu biblioteca offline</title>
+<meta name="description" content="Lector de libros y cómics offline: PDF, EPUB, CBZ, CBR, TXT y Markdown.">
+<meta name="theme-color" content="#090611">
+
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/library.css">
+<link rel="stylesheet" href="css/reader.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============================================================ SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar__brand">
+      <div class="sidebar__brand-mark" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5V4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+        </svg>
+      </div>
+      <span class="sidebar__brand-name">LibroLibre</span>
+    </div>
+
+    <nav class="sidebar__nav" id="sidebarNav" aria-label="Navegación principal">
+      <button class="nav-item active" data-screen="home">
+        <span class="nav-item__icon" data-icon="library"></span>
+        <span class="nav-item__label">Inicio</span>
+      </button>
+      <button class="nav-item" data-screen="library">
+        <span class="nav-item__icon" data-icon="library"></span>
+        <span class="nav-item__label">Biblioteca</span>
+      </button>
+      <button class="nav-item" data-screen="recent">
+        <span class="nav-item__icon" data-icon="recent"></span>
+        <span class="nav-item__label">Recientes</span>
+      </button>
+      <button class="nav-item" data-screen="favorites">
+        <span class="nav-item__icon" data-icon="favorite"></span>
+        <span class="nav-item__label">Favoritos</span>
+      </button>
+      <button class="nav-item" data-screen="categories">
+        <span class="nav-item__icon" data-icon="category"></span>
+        <span class="nav-item__label">Categorías</span>
+      </button>
+      <button class="nav-item" data-screen="collections">
+        <span class="nav-item__icon" data-icon="collection"></span>
+        <span class="nav-item__label">Colecciones</span>
+      </button>
+      <button class="nav-item" data-screen="stats">
+        <span class="nav-item__icon" data-icon="stats"></span>
+        <span class="nav-item__label">Estadísticas</span>
+      </button>
+
+      <div class="sidebar__section-label">Sistema</div>
+      <button class="nav-item" data-screen="settings">
+        <span class="nav-item__icon" data-icon="settings"></span>
+        <span class="nav-item__label">Configuración</span>
+      </button>
+      <button class="nav-item" data-screen="about">
+        <span class="nav-item__icon" data-icon="info"></span>
+        <span class="nav-item__label">Acerca de</span>
+      </button>
+    </nav>
+
+    <div class="sidebar__footer">
+      <button class="sidebar__collapse-btn" id="collapseBtn">
+        <span data-icon="chevronLeft"></span>
+        <span class="nav-item__label">Contraer</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- =============================================================== MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <button class="btn btn--icon" id="mobileMenuBtn" aria-label="Abrir menú" style="display:none">
+        <span data-icon="list"></span>
+      </button>
+      <h1 class="topbar__title" id="topbarTitle">Inicio</h1>
+
+      <div class="topbar__search">
+        <span data-icon="search"></span>
+        <input type="search" id="globalSearch" placeholder="Buscar libros, autores…" aria-label="Buscar">
+      </div>
+
+      <div class="topbar__actions">
+        <button class="btn btn--primary" id="importBtn">
+          <span data-icon="upload"></span>
+          <span>Importar</span>
+        </button>
+        <input type="file" id="fileInput" accept=".pdf,.epub,.cbz,.cbr,.txt,.md,.html" multiple hidden>
+      </div>
+    </header>
+
+    <div class="main__content">
+
+      <!-- ---------------------------------------------------------- HOME -->
+      <section class="screen active" id="screen-home">
+        <div class="screen__inner">
+
+          <div class="section" id="continueSection">
+            <div class="section__head">
+              <h2>Continuar leyendo</h2>
+            </div>
+            <div class="continue-strip" id="continueStrip"></div>
+          </div>
+
+          <div class="section">
+            <div class="section__head">
+              <h2>Estadísticas rápidas</h2>
+            </div>
+            <div class="kpi-grid" id="homeKpis"></div>
+          </div>
+
+          <div class="section">
+            <div class="section__head">
+              <h2>Favoritos</h2>
+              <button class="section__link" data-goto="favorites">Ver todos</button>
+            </div>
+            <div class="book-grid" id="homeFavorites" style="--cover-w:130px"></div>
+          </div>
+
+          <div class="section">
+            <div class="section__head">
+              <h2>Toda tu biblioteca</h2>
+              <button class="section__link" data-goto="library">Ver todos</button>
+            </div>
+            <div class="book-grid" id="homeLibraryPreview" style="--cover-w:130px"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ------------------------------------------------------- LIBRARY -->
+      <section class="screen" id="screen-library">
+        <div class="screen__inner">
+          <div class="screen__header">
+            <div>
+              <h1>Biblioteca</h1>
+              <p id="libraryCount">0 libros</p>
+            </div>
+          </div>
+
+          <div class="library-toolbar">
+            <div class="chip-row" id="categoryChips">
+              <button class="chip is-active" data-category="all">Todas</button>
+            </div>
+            <div class="select">
+              <select id="sortSelect" aria-label="Ordenar por">
+                <option value="recent">Recientes</option>
+                <option value="title">Título</option>
+                <option value="author">Autor</option>
+                <option value="progress">Progreso</option>
+              </select>
+            </div>
+            <div class="select">
+              <select id="statusSelect" aria-label="Filtrar por estado">
+                <option value="all">Todos los estados</option>
+                <option value="unread">No iniciado</option>
+                <option value="reading">Leyendo</option>
+                <option value="done">Terminado</option>
+              </select>
+            </div>
+            <div class="cover-size-slider">
+              <input type="range" id="coverSizeSlider" min="110" max="220" value="160">
+            </div>
+            <div class="view-toggle">
+              <button class="is-active" data-view="grid" data-icon="grid" aria-label="Vista de cuadrícula"></button>
+              <button data-view="list" data-icon="list" aria-label="Vista de lista"></button>
+            </div>
+          </div>
+
+          <div class="book-grid" id="libraryContainer" style="--cover-w:160px"></div>
+        </div>
+      </section>
+
+      <!-- -------------------------------------------------------- RECENT -->
+      <section class="screen" id="screen-recent">
+        <div class="screen__inner">
+          <div class="screen__header"><div><h1>Recientes</h1><p>Últimos libros abiertos</p></div></div>
+          <div class="book-grid" id="recentContainer" style="--cover-w:160px"></div>
+        </div>
+      </section>
+
+      <!-- ----------------------------------------------------- FAVORITES -->
+      <section class="screen" id="screen-favorites">
+        <div class="screen__inner">
+          <div class="screen__header"><div><h1>Favoritos</h1><p>Tus libros marcados con estrella</p></div></div>
+          <div class="book-grid" id="favoritesContainer" style="--cover-w:160px"></div>
+        </div>
+      </section>
+
+      <!-- ---------------------------------------------------- CATEGORIES -->
+      <section class="screen" id="screen-categories">
+        <div class="screen__inner">
+          <div class="screen__header"><div><h1>Categorías</h1><p>Tu biblioteca organizada por género</p></div></div>
+          <div id="categoriesContainer"></div>
+        </div>
+      </section>
+
+      <!-- --------------------------------------------------- COLLECTIONS -->
+      <section class="screen" id="screen-collections">
+        <div class="screen__inner">
+          <div class="screen__header"><div><h1>Colecciones</h1><p>Agrupa tus libros como quieras</p></div></div>
+          <div class="empty-state">
+            <div class="empty-state__icon" data-icon="collection"></div>
+            <h3>Aún no hay colecciones</h3>
+            <p>Las colecciones personalizadas llegarán en una próxima fase del proyecto.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- -------------------------------------------------------- STATS -->
+      <section class="screen" id="screen-stats">
+        <div class="screen__inner">
+          <div class="screen__header"><div><h1>Estadísticas</h1><p>Tu actividad de lectura</p></div></div>
+          <div class="kpi-grid" id="statsKpis"></div>
+
+          <div class="section">
+            <div class="section__head"><h2>Esta semana</h2></div>
+            <div class="week-chart" id="weekChart"></div>
+          </div>
+
+          <div class="section">
+            <div class="section__head"><h2>Libro más leído</h2></div>
+            <div id="mostReadBook"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ----------------------------------------------------- SETTINGS -->
+      <section class="screen" id="screen-settings">
+        <div class="screen__inner">
+          <div class="screen__header"><div><h1>Configuración</h1><p>Personaliza tu experiencia de lectura</p></div></div>
+
+          <div class="section">
+            <div class="section__head"><h2>Tema</h2></div>
+            <div class="chip-row" id="themeChips">
+              <button class="chip is-active" data-theme="default">Purple Neon</button>
+              <button class="chip" data-theme="amoled">AMOLED</button>
+              <button class="chip" data-theme="sepia">Sepia</button>
+              <button class="chip" data-theme="paper">Papel</button>
+              <button class="chip" data-theme="cyber">Cyber</button>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section__head"><h2>Preferencias</h2></div>
+            <div class="field" style="display:flex;align-items:center;justify-content:space-between;max-width:360px">
+              <label style="margin:0" for="animToggle">Animaciones</label>
+              <button class="toggle is-on" id="animToggle" role="switch" aria-checked="true"></button>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section__head"><h2>Datos</h2></div>
+            <button class="btn btn--ghost" id="exportBtn">
+              <span data-icon="upload"></span>
+              <span>Exportar notas, marcadores y configuración (JSON)</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- --------------------------------------------------------- ABOUT -->
+      <section class="screen" id="screen-about">
+        <div class="screen__inner">
+          <div class="screen__header"><div><h1>Acerca de</h1></div></div>
+          <p style="color:var(--color-text-secondary);max-width:520px;line-height:1.7">
+            LibroLibre es un lector de libros y cómics offline-first construido con HTML5, CSS3
+            y JavaScript vanilla, pensado para empaquetarse con Apache Cordova. Sin frameworks,
+            sin dependencias de UI: cada módulo (biblioteca, lector, base de datos, ajustes) vive
+            de forma independiente para ser fácil de mantener y extender.
+          </p>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script src="js/vendor/jszip/jszip.min.js"></script>
+<script src="js/vendor/epubjs/epub.min.js"></script>
+<script src="js/vendor/unrarjs/unrar-lite.bundle.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

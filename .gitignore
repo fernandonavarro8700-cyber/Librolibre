@@ -1,0 +1,14 @@
+# Generado por Cordova al agregar la plataforma Android
+/platforms/
+/plugins/
+/node_modules/
+
+# Salidas de build de Android/Gradle
+*.apk
+*.aab
+.gradle/
+local.properties
+
+# Sistema
+.DS_Store
+Thumbs.db

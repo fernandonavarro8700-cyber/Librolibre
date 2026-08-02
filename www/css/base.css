@@ -1,0 +1,114 @@
+/* ==========================================================================
+   BASE.CSS — Reset y fundamentos
+   ========================================================================== */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  min-height: 100vh;
+  background: radial-gradient(circle at 15% 0%, #150B29 0%, var(--color-bg) 45%);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+  line-height: 1.5;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  overflow: hidden;
+}
+
+img { display: block; max-width: 100%; }
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  outline: none;
+}
+
+button {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+button:disabled { cursor: not-allowed; opacity: 0.5; }
+
+a { color: inherit; text-decoration: none; }
+
+ul, ol { list-style: none; }
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  line-height: 1.25;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+/* ---- Scrollbars discretas ---- */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(184, 140, 255, 0.25);
+  border-radius: var(--radius-pill);
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(184, 140, 255, 0.45); }
+
+/* ---- Foco visible (accesibilidad) ---- */
+:focus-visible {
+  outline: 2px solid var(--color-accent-neon);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ---- Utilidades ---- */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.screen {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  animation: screenFade var(--duration-base) var(--ease-standard);
+}
+.screen.active { display: flex; }
+
+@keyframes screenFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}

@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.fernandonavarro.librolibre" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>LibroLibre</name>
+    <description>
+        Lector de libros y cómics offline: PDF, EPUB, CBZ y CBR.
+    </description>
+    <author email="fernandonavarro8700-cyber@users.noreply.github.com" href="https://github.com/fernandonavarro8700-cyber">
+        Fernando Navarro
+    </author>
+
+    <content src="index.html" />
+
+    <!-- Permite que la app cargue sus propios recursos locales sin restricciones. -->
+    <access origin="*" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <allow-navigation href="*" />
+
+    <preference name="DisallowOverscroll" value="true" />
+    <preference name="Orientation" value="default" />
+    <preference name="Fullscreen" value="false" />
+    <preference name="BackgroundColor" value="0xff090611" />
+    <preference name="android-minSdkVersion" value="24" />
+    <preference name="android-targetSdkVersion" value="34" />
+    <preference name="AndroidXEnabled" value="true" />
+
+    <platform name="android">
+        <!-- Permiso para leer archivos del dispositivo al importar PDF/EPUB/CBZ/CBR. -->
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+        </config-file>
+        <icon density="ldpi" src="www/assets/icons/icon-ldpi.png" />
+        <icon density="mdpi" src="www/assets/icons/icon-mdpi.png" />
+        <icon density="hdpi" src="www/assets/icons/icon-hdpi.png" />
+        <icon density="xhdpi" src="www/assets/icons/icon-xhdpi.png" />
+        <icon density="xxhdpi" src="www/assets/icons/icon-xxhdpi.png" />
+        <icon density="xxxhdpi" src="www/assets/icons/icon-xxxhdpi.png" />
+    </platform>
+</widget>

@@ -1,0 +1,12 @@
+{
+  "name": "librolibre",
+  "displayName": "LibroLibre",
+  "version": "1.0.0",
+  "description": "Lector de libros y cómics offline: PDF, EPUB, CBZ y CBR.",
+  "private": true,
+  "cordova": {
+    "platforms": [
+      "android"
+    ]
+  }
+}

@@ -1,0 +1,156 @@
+/* ==========================================================================
+   TOKENS.CSS — Sistema de diseño LibroLibre
+   Identidad: Neo-Purple / Dark Neumorphism / Glassmorphism
+   ========================================================================== */
+
+:root {
+  /* ---- Color: superficies ---- */
+  --color-bg: #090611;
+  --color-panel: #12091F;
+  --color-card: #1A1030;
+  --color-card-elevated: #24153E;
+
+  /* ---- Color: acento ---- */
+  --color-accent: #5D2EFF;
+  --color-accent-neon: #B88CFF;
+  --color-accent-hover: #9165FF;
+
+  /* ---- Color: texto ---- */
+  --color-text: #FFFFFF;
+  --color-text-secondary: #D6C8FF;
+  --color-text-muted: rgba(214, 200, 255, 0.55);
+
+  /* ---- Color: efectos ---- */
+  --glow-color: rgba(184, 140, 255, 0.45);
+  --shadow-deep: rgba(0, 0, 0, 0.55);
+
+  /* ---- Color: estado ---- */
+  --color-success: #3EE38B;
+  --color-warning: #FFC24B;
+  --color-danger: #FF5D7A;
+
+  /* ---- Superficies de vidrio ---- */
+  --glass-fill: rgba(26, 16, 48, 0.55);
+  --glass-border: rgba(184, 140, 255, 0.16);
+  --glass-blur: 18px;
+
+  /* ---- Tipografía ---- */
+  --font-display: 'Inter', 'SF Pro Display', 'Segoe UI', Roboto, system-ui, sans-serif;
+  --font-body: 'Inter', 'Segoe UI', Roboto, system-ui, sans-serif;
+
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.8125rem;
+  --fs-base: 0.9375rem;
+  --fs-md: 1.0625rem;
+  --fs-lg: 1.25rem;
+  --fs-xl: 1.625rem;
+  --fs-xxl: 2.25rem;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* ---- Radios ---- */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+
+  /* ---- Espaciado (escala 4px) ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ---- Sombras (neumorphism oscuro) ---- */
+  --shadow-raised:
+    6px 6px 14px var(--shadow-deep),
+    -4px -4px 12px rgba(93, 46, 255, 0.06);
+  --shadow-inset:
+    inset 4px 4px 10px rgba(0, 0, 0, 0.5),
+    inset -3px -3px 8px rgba(93, 46, 255, 0.05);
+  --shadow-glow-sm: 0 0 16px var(--glow-color);
+  --shadow-glow-md: 0 0 32px var(--glow-color);
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.45);
+
+  /* ---- Movimiento ---- */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 400ms;
+
+  /* ---- Layout ---- */
+  --sidebar-width: 264px;
+  --sidebar-width-collapsed: 76px;
+  --topbar-height: 64px;
+  --z-sidebar: 40;
+  --z-topbar: 30;
+  --z-modal: 100;
+  --z-toast: 110;
+}
+
+/* ---- Temas alternos (se activan agregando la clase al <body>) ---- */
+
+body.theme-amoled {
+  --color-bg: #000000;
+  --color-panel: #070707;
+  --color-card: #111111;
+  --color-card-elevated: #1A1A1A;
+}
+
+body.theme-sepia {
+  --color-bg: #F4ECD8;
+  --color-panel: #EDE1C4;
+  --color-card: #E6D8B8;
+  --color-card-elevated: #DECBA0;
+  --color-text: #3B2E1E;
+  --color-text-secondary: #5A4A32;
+  --color-accent: #8B5E34;
+  --color-accent-neon: #B98A52;
+  --color-accent-hover: #A17542;
+  --glow-color: rgba(139, 94, 52, 0.25);
+  --shadow-deep: rgba(59, 46, 30, 0.25);
+}
+
+body.theme-paper {
+  --color-bg: #FFFFFF;
+  --color-panel: #F6F6F6;
+  --color-card: #FFFFFF;
+  --color-card-elevated: #F0F0F0;
+  --color-text: #1B1B1B;
+  --color-text-secondary: #4A4A4A;
+  --color-accent: #5D2EFF;
+  --color-accent-neon: #7C4DFF;
+  --color-accent-hover: #6B3EFF;
+  --glow-color: rgba(93, 46, 255, 0.15);
+  --shadow-deep: rgba(0, 0, 0, 0.08);
+}
+
+body.theme-cyber {
+  --color-bg: #05060A;
+  --color-panel: #0A0E17;
+  --color-card: #0F1524;
+  --color-card-elevated: #16203A;
+  --color-accent: #00F0FF;
+  --color-accent-neon: #7CFFEA;
+  --color-accent-hover: #35F5D6;
+  --glow-color: rgba(0, 240, 255, 0.4);
+}
+
+body.no-animations * {
+  animation-duration: 0.001ms !important;
+  transition-duration: 0.001ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
