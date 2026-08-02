@@ -317,6 +317,8 @@ function setupLibraryToolbar() {
 }
 
 /* ------------------------------------------------------------ IMPORTAR -- */
+const SUPPORTED_EXTENSIONS = ['pdf', 'epub', 'cbz', 'cbr', 'txt', 'md', 'html', 'htm'];
+
 function setupImport() {
   const importBtn = document.getElementById('importBtn');
   const fileInput = document.getElementById('fileInput');
@@ -324,8 +326,14 @@ function setupImport() {
   importBtn.addEventListener('click', () => fileInput.click());
 
   fileInput.addEventListener('change', async () => {
-    const files = Array.from(fileInput.files || []);
-    if (files.length === 0) return;
+    const allFiles = Array.from(fileInput.files || []);
+    if (allFiles.length === 0) return;
+
+    const files = allFiles.filter((f) => {
+      const ext = f.name.split('.').pop().toLowerCase();
+      return SUPPORTED_EXTENSIONS.includes(ext);
+    });
+    const skipped = allFiles.length - files.length;
 
     for (const file of files) {
       try {
@@ -336,7 +344,13 @@ function setupImport() {
       }
     }
 
-    showToast(`${files.length} ${files.length === 1 ? 'archivo importado' : 'archivos importados'}`, 'success');
+    if (files.length > 0) {
+      showToast(`${files.length} ${files.length === 1 ? 'archivo importado' : 'archivos importados'}`, 'success');
+    }
+    if (skipped > 0) {
+      showToast(`${skipped} ${skipped === 1 ? 'archivo no tiene' : 'archivos no tienen'} un formato compatible (PDF, EPUB, CBZ, CBR, TXT, MD, HTML)`, 'error', 3600);
+    }
+
     fileInput.value = '';
 
     const activeScreen = document.querySelector('.screen.active').id.replace('screen-', '');
