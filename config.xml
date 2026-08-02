@@ -19,7 +19,7 @@
     <preference name="DisallowOverscroll" value="true" />
     <preference name="Orientation" value="default" />
     <preference name="Fullscreen" value="false" />
-    <preference name="BackgroundColor" value="0xff090611" />
+    <preference name="BackgroundColor" value="#ff090611" />
     <preference name="android-minSdkVersion" value="24" />
     <preference name="android-targetSdkVersion" value="34" />
     <preference name="AndroidXEnabled" value="true" />
