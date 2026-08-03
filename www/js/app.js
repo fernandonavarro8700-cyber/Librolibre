@@ -40,6 +40,11 @@ function paintIcons() {
 }
 
 /* ---------------------------------------------------------- NAVEGACIÓN -- */
+function setMobileSidebarOpen(open) {
+  document.getElementById('sidebar').classList.toggle('mobile-open', open);
+  document.getElementById('sidebarBackdrop').classList.toggle('active', open);
+}
+
 function goToScreen(name) {
   document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach((n) => n.classList.remove('active'));
@@ -52,7 +57,7 @@ function goToScreen(name) {
   document.getElementById('topbarTitle').textContent = SCREEN_TITLES[name] || '';
 
   // Cierra el sidebar en móvil tras navegar
-  document.getElementById('sidebar').classList.remove('mobile-open');
+  setMobileSidebarOpen(false);
 
   refreshScreen(name);
 }
@@ -72,7 +77,12 @@ function setupNavigation() {
   });
 
   document.getElementById('mobileMenuBtn').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.toggle('mobile-open');
+    const sidebar = document.getElementById('sidebar');
+    setMobileSidebarOpen(!sidebar.classList.contains('mobile-open'));
+  });
+
+  document.getElementById('sidebarBackdrop').addEventListener('click', () => {
+    setMobileSidebarOpen(false);
   });
 }
 

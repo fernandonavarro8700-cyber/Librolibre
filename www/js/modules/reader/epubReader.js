@@ -13,6 +13,18 @@ const FONT_STACKS = {
   dyslexic: "'Comic Sans MS', 'Comic Sans', cursive, sans-serif",
 };
 
+// El contenido del EPUB se renderiza dentro de un <iframe> con su propio
+// documento: no hereda las variables CSS de la app, así que sin esto el
+// texto queda con los colores originales del libro (típicamente negro)
+// flotando sobre el fondo oscuro de la app y se vuelve ilegible.
+const READING_THEMES = {
+  default: { background: '#150B29', color: '#F1EBFF', link: '#B88CFF' },
+  amoled: { background: '#000000', color: '#F2F2F2', link: '#B88CFF' },
+  sepia: { background: '#F4ECD8', color: '#3B2E1E', link: '#8B5E34' },
+  paper: { background: '#FFFFFF', color: '#1B1B1B', link: '#5D2EFF' },
+  cyber: { background: '#0A0E17', color: '#E8FFFC', link: '#00F0FF' },
+};
+
 export class EpubReaderEngine {
   /**
    * @param {Object} opts
@@ -41,6 +53,7 @@ export class EpubReaderEngine {
       lineHeight: 1.5,
       margin: 24, // px
       align: 'left', // left | justify
+      theme: 'default', // clave de READING_THEMES
     };
   }
 
@@ -116,16 +129,34 @@ export class EpubReaderEngine {
 
   /* -------------------------------------------------------------- TEMA - */
   _applyTheme() {
+    const t = READING_THEMES[this.prefs.theme] || READING_THEMES.default;
     this.rendition.themes.default({
+      html: {
+        background: `${t.background} !important`,
+      },
       body: {
         'font-family': `${FONT_STACKS[this.prefs.fontFamily] || FONT_STACKS.inter} !important`,
         'line-height': `${this.prefs.lineHeight} !important`,
         'text-align': `${this.prefs.align} !important`,
         padding: `0 ${this.prefs.margin}px !important`,
+        background: `${t.background} !important`,
+        color: `${t.color} !important`,
       },
-      p: { 'text-align': `${this.prefs.align} !important` },
+      'p, span, div, li, td, h1, h2, h3, h4, h5, h6': {
+        'text-align': `${this.prefs.align} !important`,
+        color: `${t.color} !important`,
+        background: 'transparent !important',
+      },
+      a: {
+        color: `${t.link} !important`,
+      },
     });
     this.rendition.themes.fontSize(`${this.prefs.fontSize}%`);
+  }
+
+  setReadingTheme(themeName) {
+    this.prefs.theme = READING_THEMES[themeName] ? themeName : 'default';
+    this._applyTheme();
   }
 
   setFontFamily(name) {

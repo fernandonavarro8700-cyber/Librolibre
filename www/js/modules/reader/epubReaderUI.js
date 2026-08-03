@@ -8,6 +8,7 @@ import { EpubReaderEngine } from './epubReader.js';
 import Bookmarks from './bookmarks.js';
 import { renderNotesPanel } from './notesPanel.js';
 import { startSession, stopSession } from './readingSession.js';
+import Settings from '../settings/settings.js';
 import LibraryData from '../library/libraryData.js';
 import { icon } from '../components/icons.js';
 import { showToast } from '../components/toast.js';
@@ -393,6 +394,7 @@ export async function openEpubReader(book) {
   try {
     await engine.load(blob, {
       initialCfi: typeof book.progressPage === 'string' ? book.progressPage : null,
+      prefs: { theme: Settings.current.theme },
     });
   } catch (err) {
     console.error(err);
