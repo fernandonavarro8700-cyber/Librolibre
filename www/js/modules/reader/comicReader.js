@@ -6,6 +6,8 @@
  * que el lector PDF.
  */
 
+import { enablePinchZoom } from './pinchZoom.js';
+
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 3;
 
@@ -33,6 +35,13 @@ export class ComicReaderEngine {
     this._activeObserver = null;
     this._pageChangeTimer = null;
     this._objectUrls = [];
+
+    this._disablePinch = enablePinchZoom(this.viewerEl, {
+      getZoom: () => this.zoom,
+      setZoom: (z) => this.setZoom(z),
+      min: MIN_ZOOM,
+      max: MAX_ZOOM,
+    });
   }
 
   async load(provider, { initialPage = 1, zoom = 1, scrollMode = 'vertical', doublePage = false } = {}) {
@@ -51,6 +60,7 @@ export class ComicReaderEngine {
   destroy() {
     if (this.observer) this.observer.disconnect();
     if (this._activeObserver) this._activeObserver.disconnect();
+    if (this._disablePinch) this._disablePinch();
     this._objectUrls.forEach((url) => URL.revokeObjectURL(url));
     this._objectUrls = [];
     this.viewerEl.innerHTML = '';

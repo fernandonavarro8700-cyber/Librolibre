@@ -8,6 +8,9 @@ import { loadPdfDocument, renderPageToDataURL } from '../reader/pdfEngine.js';
 import { loadEpubBook, extractEpubMetadata } from '../reader/epubEngine.js';
 import { loadCbzPages } from '../reader/cbzEngine.js';
 import { loadCbrPages } from '../reader/cbrEngine.js';
+import { getLanguage } from '../i18n/i18n.js';
+
+const LOCALE_BY_LANG = { es: 'es-ES', en: 'en-US', fr: 'fr-FR', pt: 'pt-PT' };
 
 /** Paleta de gradientes usados como portada de respaldo cuando el libro no tiene imagen. */
 const FALLBACK_GRADIENTS = [
@@ -44,7 +47,8 @@ function dateKey(timestamp) {
 function dayLabel(key) {
   const [y, m, d] = key.split('-').map(Number);
   const date = new Date(y, m - 1, d);
-  return date.toLocaleDateString('es-ES', { weekday: 'short' }).replace('.', '');
+  const locale = LOCALE_BY_LANG[getLanguage()] || 'es-ES';
+  return date.toLocaleDateString(locale, { weekday: 'short' }).replace('.', '');
 }
 
 /** Devuelve las claves YYYY-MM-DD de los últimos n días (incluye hoy), de más viejo a más nuevo. */

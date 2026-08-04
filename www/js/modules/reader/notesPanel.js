@@ -8,6 +8,7 @@ import Notes, { NOTE_COLORS } from './notes.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { icon } from '../components/icons.js';
 import { showToast } from '../components/toast.js';
+import { t } from '../i18n/i18n.js';
 
 function escapeHTML(str = '') {
   const div = document.createElement('div');
@@ -17,8 +18,8 @@ function escapeHTML(str = '') {
 
 function formatPageLabel(page, currentLabel) {
   if (page == null) return '';
-  if (typeof page === 'number') return `Página ${page}`;
-  return currentLabel || 'Posición guardada';
+  if (typeof page === 'number') return t('note_page_label', { page });
+  return currentLabel || t('note_position_saved');
 }
 
 /**
@@ -34,7 +35,7 @@ export async function renderNotesPanel(containerEl, ctx) {
 
   const addBtn = document.createElement('button');
   addBtn.className = 'btn btn--ghost note-add-btn';
-  addBtn.innerHTML = `${icon('plus')} <span>Nueva nota en esta página</span>`;
+  addBtn.innerHTML = `${icon('plus')} <span>${t('note_add_btn')}</span>`;
   addBtn.addEventListener('click', () => openNoteEditor(containerEl, ctx, null));
   containerEl.appendChild(addBtn);
 
@@ -45,7 +46,7 @@ export async function renderNotesPanel(containerEl, ctx) {
   const notes = await Notes.listForBook(ctx.bookId);
 
   if (notes.length === 0) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-state__icon">${icon('plus')}</div><h3>Sin notas</h3><p>Agrega la primera nota con el botón de arriba.</p></div>`;
+    list.innerHTML = `<div class="empty-state"><div class="empty-state__icon">${icon('plus')}</div><h3>${t('notes_empty_title')}</h3><p>${t('notes_empty_desc')}</p></div>`;
     return;
   }
 
@@ -57,14 +58,14 @@ export async function renderNotesPanel(containerEl, ctx) {
       <div class="note-row__bar"></div>
       <div class="note-row__body">
         <div class="note-row__head">
-          <span class="note-row__title">${escapeHTML(note.title) || 'Sin título'}</span>
+          <span class="note-row__title">${escapeHTML(note.title) || t('note_untitled')}</span>
           <span class="note-row__page">${escapeHTML(formatPageLabel(note.page, ctx.getCurrentLabel ? ctx.getCurrentLabel() : ''))}</span>
         </div>
         ${note.content ? `<p class="note-row__content">${escapeHTML(note.content)}</p>` : ''}
       </div>
       <div class="note-row__actions">
-        <button class="btn btn--icon btn--sm" data-action="edit" aria-label="Editar nota">${icon('edit')}</button>
-        <button class="btn btn--icon btn--sm" data-action="delete" aria-label="Eliminar nota">${icon('close')}</button>
+        <button class="btn btn--icon btn--sm" data-action="edit" aria-label="${t('edit_note')}">${icon('edit')}</button>
+        <button class="btn btn--icon btn--sm" data-action="delete" aria-label="${t('delete_note')}">${icon('close')}</button>
       </div>
     `;
 
@@ -76,7 +77,7 @@ export async function renderNotesPanel(containerEl, ctx) {
     row.querySelector('[data-action="delete"]').addEventListener('click', async (e) => {
       e.stopPropagation();
       await Notes.remove(note.id);
-      showToast('Nota eliminada', 'default', 1600);
+      showToast(t('toast_note_deleted'), 'default', 1600);
       renderNotesPanel(containerEl, ctx);
     });
 
@@ -98,30 +99,30 @@ function openNoteEditor(containerEl, ctx, existingNote) {
 
   const bodyHTML = `
     <div class="field">
-      <label for="noteTitleInput">Título</label>
-      <input type="text" id="noteTitleInput" placeholder="Título de la nota" value="${existingNote ? escapeHTML(existingNote.title) : ''}">
+      <label for="noteTitleInput">${t('note_field_title')}</label>
+      <input type="text" id="noteTitleInput" placeholder="${t('note_field_title_placeholder')}" value="${existingNote ? escapeHTML(existingNote.title) : ''}">
     </div>
     <div class="field">
-      <label for="noteContentInput">Contenido</label>
-      <textarea id="noteContentInput" placeholder="Escribe tu nota…">${existingNote ? escapeHTML(existingNote.content) : ''}</textarea>
+      <label for="noteContentInput">${t('note_field_content')}</label>
+      <textarea id="noteContentInput" placeholder="${t('note_field_content_placeholder')}">${existingNote ? escapeHTML(existingNote.content) : ''}</textarea>
     </div>
     <div class="field">
-      <label>Color</label>
+      <label>${t('note_field_color')}</label>
       <div class="note-swatch-row" id="noteSwatchRow">${swatches}</div>
     </div>
   `;
 
   const overlay = openModal({
-    title: isEdit ? 'Editar nota' : 'Nueva nota',
+    title: isEdit ? t('note_modal_edit') : t('note_modal_new'),
     bodyHTML,
     actions: [
       {
-        label: 'Cancelar',
+        label: t('note_cancel'),
         variant: 'ghost',
         onClick: closeModal,
       },
       {
-        label: isEdit ? 'Guardar cambios' : 'Crear nota',
+        label: isEdit ? t('note_save_changes') : t('note_create'),
         variant: 'primary',
         onClick: async () => {
           const title = overlay.querySelector('#noteTitleInput').value.trim();
@@ -129,7 +130,7 @@ function openNoteEditor(containerEl, ctx, existingNote) {
 
           if (isEdit) {
             await Notes.update(existingNote.id, { title, content, color: selectedColor });
-            showToast('Nota actualizada', 'success', 1600);
+            showToast(t('toast_note_updated'), 'success', 1600);
           } else {
             await Notes.add(ctx.bookId, {
               title,
@@ -137,7 +138,7 @@ function openNoteEditor(containerEl, ctx, existingNote) {
               color: selectedColor,
               page: ctx.getCurrentPage ? ctx.getCurrentPage() : null,
             });
-            showToast('Nota guardada', 'success', 1600);
+            showToast(t('toast_note_saved'), 'success', 1600);
           }
 
           closeModal();

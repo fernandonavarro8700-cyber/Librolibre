@@ -12,6 +12,7 @@ import Settings from '../settings/settings.js';
 import LibraryData from '../library/libraryData.js';
 import { icon } from '../components/icons.js';
 import { showToast } from '../components/toast.js';
+import { t, applyTranslations } from '../i18n/i18n.js';
 
 let rootEl = null;
 let engine = null;
@@ -20,10 +21,10 @@ let activePanelTab = 'toc';
 let progressSaveTimer = null;
 
 const FONT_OPTIONS = [
-  { id: 'inter', label: 'Predeterminada' },
-  { id: 'serif', label: 'Serif' },
-  { id: 'mono', label: 'Monoespaciada' },
-  { id: 'dyslexic', label: 'Alta legibilidad' },
+  { id: 'inter', key: 'font_default' },
+  { id: 'serif', key: 'font_serif' },
+  { id: 'mono', key: 'font_mono' },
+  { id: 'dyslexic', key: 'font_dyslexic' },
 ];
 
 function ensureRoot() {
@@ -33,14 +34,14 @@ function ensureRoot() {
   rootEl.className = 'reader-screen';
   rootEl.innerHTML = `
     <div class="reader-toolbar">
-      <button class="btn btn--icon" data-action="close" aria-label="Cerrar lector">${icon('chevronLeft')}</button>
+      <button class="btn btn--icon" data-action="close" aria-label="Cerrar lector" data-i18n-aria="reader_close">${icon('chevronLeft')}</button>
       <div class="reader-toolbar__title"></div>
       <div class="reader-toolbar__group">
-        <button class="btn btn--icon" data-action="prev" data-tooltip="Página anterior">${icon('chevronLeft')}</button>
-        <button class="btn btn--icon" data-action="next" data-tooltip="Página siguiente">${icon('chevronRight')}</button>
-        <button class="btn btn--icon" data-action="fullscreen" data-tooltip="Pantalla completa">${icon('fullscreen')}</button>
-        <button class="btn btn--icon" data-action="bookmark" data-tooltip="Agregar marcador">${icon('bookmarkAdd')}</button>
-        <button class="btn btn--icon" data-action="panel" data-tooltip="Tipografía / Índice / Buscar / Marcadores">${icon('panel')}</button>
+        <button class="btn btn--icon" data-action="prev" data-tooltip="Página anterior" data-i18n-tooltip="reader_prev_page">${icon('chevronLeft')}</button>
+        <button class="btn btn--icon" data-action="next" data-tooltip="Página siguiente" data-i18n-tooltip="reader_next_page">${icon('chevronRight')}</button>
+        <button class="btn btn--icon" data-action="fullscreen" data-tooltip="Pantalla completa" data-i18n-tooltip="reader_fullscreen">${icon('fullscreen')}</button>
+        <button class="btn btn--icon" data-action="bookmark" data-tooltip="Agregar marcador" data-i18n-tooltip="reader_bookmark_add">${icon('bookmarkAdd')}</button>
+        <button class="btn btn--icon" data-action="panel" data-tooltip="Tipografía / Índice / Buscar / Marcadores" data-i18n-tooltip="reader_panel_epub">${icon('panel')}</button>
       </div>
       <div class="reader-toolbar__page-indicator">
         <span class="epub-chapter-label"></span>
@@ -58,11 +59,11 @@ function ensureRoot() {
 
       <aside class="reader-panel">
         <div class="reader-panel__tabs">
-          <button class="reader-panel__tab is-active" data-tab="toc">Índice</button>
-          <button class="reader-panel__tab" data-tab="font">Fuente</button>
-          <button class="reader-panel__tab" data-tab="search">Buscar</button>
-          <button class="reader-panel__tab" data-tab="bookmarks">Marcadores</button>
-          <button class="reader-panel__tab" data-tab="notes">Notas</button>
+          <button class="reader-panel__tab is-active" data-tab="toc" data-i18n="tab_toc">Índice</button>
+          <button class="reader-panel__tab" data-tab="font" data-i18n="tab_font">Fuente</button>
+          <button class="reader-panel__tab" data-tab="search" data-i18n="tab_search">Buscar</button>
+          <button class="reader-panel__tab" data-tab="bookmarks" data-i18n="tab_bookmarks">Marcadores</button>
+          <button class="reader-panel__tab" data-tab="notes" data-i18n="tab_notes">Notas</button>
         </div>
 
         <div class="reader-panel__content is-active" data-panel="toc">
@@ -71,11 +72,11 @@ function ensureRoot() {
 
         <div class="reader-panel__content" data-panel="font">
           <div class="font-control-group">
-            <span class="font-control-group__label">Tipografía</span>
+            <span class="font-control-group__label" data-i18n="font_family">Tipografía</span>
             <div class="chip-row" id="epubFontChips"></div>
           </div>
           <div class="font-control-group">
-            <span class="font-control-group__label">Tamaño de texto</span>
+            <span class="font-control-group__label" data-i18n="font_size">Tamaño de texto</span>
             <div class="stepper">
               <button data-action="fontSizeDown">−</button>
               <span class="stepper__value" id="epubFontSizeValue">100%</span>
@@ -83,7 +84,7 @@ function ensureRoot() {
             </div>
           </div>
           <div class="font-control-group">
-            <span class="font-control-group__label">Interlineado</span>
+            <span class="font-control-group__label" data-i18n="line_height">Interlineado</span>
             <div class="stepper">
               <button data-action="lineHeightDown">−</button>
               <span class="stepper__value" id="epubLineHeightValue">1.5</span>
@@ -91,7 +92,7 @@ function ensureRoot() {
             </div>
           </div>
           <div class="font-control-group">
-            <span class="font-control-group__label">Márgenes</span>
+            <span class="font-control-group__label" data-i18n="margins">Márgenes</span>
             <div class="stepper">
               <button data-action="marginDown">−</button>
               <span class="stepper__value" id="epubMarginValue">24px</span>
@@ -99,10 +100,10 @@ function ensureRoot() {
             </div>
           </div>
           <div class="font-control-group">
-            <span class="font-control-group__label">Alineación</span>
+            <span class="font-control-group__label" data-i18n="alignment">Alineación</span>
             <div class="chip-row" id="epubAlignChips">
-              <button class="chip is-active" data-align="left">Izquierda</button>
-              <button class="chip" data-align="justify">Justificado</button>
+              <button class="chip is-active" data-align="left" data-i18n="align_left">Izquierda</button>
+              <button class="chip" data-align="justify" data-i18n="align_justify">Justificado</button>
             </div>
           </div>
         </div>
@@ -110,7 +111,7 @@ function ensureRoot() {
         <div class="reader-panel__content" data-panel="search">
           <div class="reader-search-box">
             ${icon('search')}
-            <input type="search" placeholder="Buscar texto en el libro…" class="epub-search-input">
+            <input type="search" placeholder="Buscar texto en el libro…" class="epub-search-input" data-i18n-placeholder="reader_search_placeholder_book">
           </div>
           <div class="epub-search-results"></div>
         </div>
@@ -127,6 +128,7 @@ function ensureRoot() {
   `;
 
   document.body.appendChild(rootEl);
+  applyTranslations(rootEl);
   buildFontChips();
   wireToolbar();
   return rootEl;
@@ -135,7 +137,7 @@ function ensureRoot() {
 function buildFontChips() {
   const wrap = rootEl.querySelector('#epubFontChips');
   wrap.innerHTML = FONT_OPTIONS.map(
-    (f, i) => `<button class="chip ${i === 0 ? 'is-active' : ''}" data-font="${f.id}">${f.label}</button>`
+    (f, i) => `<button class="chip ${i === 0 ? 'is-active' : ''}" data-font="${f.id}" data-i18n="${f.key}">${t(f.key)}</button>`
   ).join('');
 }
 
@@ -151,10 +153,10 @@ function wireToolbar() {
     const existing = await Bookmarks.existsForPage(currentBook.id, cfi);
     if (existing) {
       await Bookmarks.remove(existing.id);
-      showToast('Marcador eliminado', 'default', 1600);
+      showToast(t('toast_bookmark_removed'), 'default', 1600);
     } else {
       await Bookmarks.add(currentBook.id, cfi, rootEl.querySelector('.epub-chapter-label').textContent);
-      showToast('Página marcada', 'success', 1600);
+      showToast(t('toast_bookmark_added'), 'success', 1600);
     }
     if (activePanelTab === 'bookmarks') renderBookmarksPanel();
   });
@@ -239,7 +241,7 @@ function toggleFullscreen() {
     document.exitFullscreen();
   } else {
     rootEl.requestFullscreen().catch(() => {
-      showToast('Pantalla completa no disponible en este dispositivo', 'default', 2200);
+      showToast(t('toast_fullscreen_unavailable'), 'default', 2200);
     });
   }
 }
@@ -280,7 +282,7 @@ async function renderBookmarksPanel() {
   const bookmarks = await Bookmarks.listForBook(currentBook.id);
 
   if (bookmarks.length === 0) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-state__icon">${icon('bookmarkAdd')}</div><h3>Sin marcadores</h3><p>Usa el ícono de marcador en la barra superior para guardar esta página.</p></div>`;
+    list.innerHTML = `<div class="empty-state"><div class="empty-state__icon">${icon('bookmarkAdd')}</div><h3>${t('bookmarks_empty_title')}</h3><p>${t('bookmarks_empty_desc')}</p></div>`;
     return;
   }
 
@@ -292,8 +294,8 @@ async function renderBookmarksPanel() {
     row.className = 'bookmark-row';
     row.innerHTML = `
       <div class="bookmark-row__page">${icon('bookmarkAdd')}</div>
-      <div class="bookmark-row__comment">${escapeHTML(bm.comment || 'Marcador')}</div>
-      <button class="bookmark-row__remove" aria-label="Eliminar marcador">${icon('close')}</button>
+      <div class="bookmark-row__comment">${escapeHTML(bm.comment || t('bookmark_label'))}</div>
+      <button class="bookmark-row__remove" aria-label="${t('remove_bookmark')}">${icon('close')}</button>
     `;
     row.addEventListener('click', (e) => {
       if (e.target.closest('.bookmark-row__remove')) return;
@@ -316,7 +318,7 @@ async function runSearch(query) {
   const results = await engine.search(query);
 
   if (results.length === 0) {
-    resultsEl.innerHTML = `<p style="color:var(--color-text-muted);font-size:var(--fs-xs)">Sin resultados para "${escapeHTML(query)}".</p>`;
+    resultsEl.innerHTML = `<p style="color:var(--color-text-muted);font-size:var(--fs-xs)">${t('search_no_results', { query: escapeHTML(query) })}</p>`;
     return;
   }
 
@@ -371,7 +373,7 @@ export async function openEpubReader(book) {
 
   const blob = await LibraryData.getFileBlob(book.id);
   if (!blob) {
-    showToast('No se encontró el archivo original de este libro', 'error', 3000);
+    showToast(t('toast_file_not_found'), 'error', 3000);
     closeReader();
     return;
   }
@@ -398,7 +400,7 @@ export async function openEpubReader(book) {
     });
   } catch (err) {
     console.error(err);
-    showToast('No se pudo abrir el EPUB', 'error', 3000);
+    showToast(t('toast_epub_open_error'), 'error', 3000);
     closeReader();
     return;
   }

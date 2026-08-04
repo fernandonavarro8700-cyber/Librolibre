@@ -14,6 +14,19 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 const CMAP_URL = new URL('../../../assets/vendor/pdfjs/cmaps/', import.meta.url).href;
 const FONT_URL = new URL('../../../assets/vendor/pdfjs/standard_fonts/', import.meta.url).href;
 
+let warmWorker = null;
+
+/**
+ * Arranca el Web Worker de PDF.js por adelantado (sin abrir ningún documento
+ * todavía), para que el primer PDF que el usuario abra no pague el costo de
+ * inicializar el worker en ese momento. Se llama una vez, al arrancar la app.
+ */
+export function warmupPdfWorker() {
+  if (warmWorker) return warmWorker;
+  warmWorker = new pdfjsLib.PDFWorker({ name: 'librolibre-warmup' });
+  return warmWorker;
+}
+
 /**
  * Abre un documento PDF a partir de un Blob/File o ArrayBuffer.
  * @returns {Promise<import('pdfjs-dist').PDFDocumentProxy>}
@@ -25,8 +38,16 @@ export async function loadPdfDocument(source) {
     cMapUrl: CMAP_URL,
     cMapPacked: true,
     standardFontDataUrl: FONT_URL,
+    // Reutiliza el worker precalentado si ya está listo; si el documento
+    // llega antes de que termine de iniciar, PDF.js espera a que lo esté.
+    worker: warmWorker || undefined,
   });
-  return task.promise;
+  const doc = await task.promise;
+  // Cada documento necesita su propio worker "vivo" a partir de acá; se
+  // vuelve a precalentar uno nuevo para la próxima apertura.
+  warmWorker = null;
+  warmupPdfWorker();
+  return doc;
 }
 
 /**

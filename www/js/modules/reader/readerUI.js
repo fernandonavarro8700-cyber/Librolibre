@@ -12,6 +12,7 @@ import { startSession, stopSession } from './readingSession.js';
 import LibraryData from '../library/libraryData.js';
 import { icon } from '../components/icons.js';
 import { showToast } from '../components/toast.js';
+import { t, applyTranslations } from '../i18n/i18n.js';
 
 let rootEl = null;
 let engine = null;
@@ -27,16 +28,16 @@ function ensureRoot() {
   rootEl.className = 'reader-screen';
   rootEl.innerHTML = `
     <div class="reader-toolbar">
-      <button class="btn btn--icon" data-action="close" aria-label="Cerrar lector">${icon('chevronLeft')}</button>
+      <button class="btn btn--icon" data-action="close" aria-label="Cerrar lector" data-i18n-aria="reader_close">${icon('chevronLeft')}</button>
       <div class="reader-toolbar__title"></div>
       <div class="reader-toolbar__group">
-        <button class="btn btn--icon" data-action="zoomOut" data-tooltip="Alejar">${icon('zoomOut')}</button>
-        <button class="btn btn--icon" data-action="zoomIn" data-tooltip="Acercar">${icon('zoomIn')}</button>
-        <button class="btn btn--icon" data-action="rotate" data-tooltip="Rotar">${icon('rotate')}</button>
-        <button class="btn btn--icon" data-action="scrollMode" data-tooltip="Modo de desplazamiento">${icon('layout')}</button>
-        <button class="btn btn--icon" data-action="fullscreen" data-tooltip="Pantalla completa">${icon('fullscreen')}</button>
-        <button class="btn btn--icon" data-action="bookmark" data-tooltip="Agregar marcador">${icon('bookmarkAdd')}</button>
-        <button class="btn btn--icon" data-action="panel" data-tooltip="Miniaturas / Buscar / Marcadores">${icon('panel')}</button>
+        <button class="btn btn--icon" data-action="zoomOut" data-tooltip="Alejar" data-i18n-tooltip="reader_zoom_out">${icon('zoomOut')}</button>
+        <button class="btn btn--icon" data-action="zoomIn" data-tooltip="Acercar" data-i18n-tooltip="reader_zoom_in">${icon('zoomIn')}</button>
+        <button class="btn btn--icon" data-action="rotate" data-tooltip="Rotar" data-i18n-tooltip="reader_rotate">${icon('rotate')}</button>
+        <button class="btn btn--icon" data-action="scrollMode" data-tooltip="Modo de desplazamiento" data-i18n-tooltip="reader_scroll_mode">${icon('layout')}</button>
+        <button class="btn btn--icon" data-action="fullscreen" data-tooltip="Pantalla completa" data-i18n-tooltip="reader_fullscreen">${icon('fullscreen')}</button>
+        <button class="btn btn--icon" data-action="bookmark" data-tooltip="Agregar marcador" data-i18n-tooltip="reader_bookmark_add">${icon('bookmarkAdd')}</button>
+        <button class="btn btn--icon" data-action="panel" data-tooltip="Miniaturas / Buscar / Marcadores" data-i18n-tooltip="reader_panel_pdf">${icon('panel')}</button>
       </div>
       <div class="reader-toolbar__page-indicator">
         <span class="current-page">1</span> / <span class="total-pages">1</span>
@@ -48,10 +49,10 @@ function ensureRoot() {
 
       <aside class="reader-panel">
         <div class="reader-panel__tabs">
-          <button class="reader-panel__tab is-active" data-tab="thumbs">Miniaturas</button>
-          <button class="reader-panel__tab" data-tab="search">Buscar</button>
-          <button class="reader-panel__tab" data-tab="bookmarks">Marcadores</button>
-          <button class="reader-panel__tab" data-tab="notes">Notas</button>
+          <button class="reader-panel__tab is-active" data-tab="thumbs" data-i18n="tab_thumbs">Miniaturas</button>
+          <button class="reader-panel__tab" data-tab="search" data-i18n="tab_search">Buscar</button>
+          <button class="reader-panel__tab" data-tab="bookmarks" data-i18n="tab_bookmarks">Marcadores</button>
+          <button class="reader-panel__tab" data-tab="notes" data-i18n="tab_notes">Notas</button>
         </div>
         <div class="reader-panel__content is-active" data-panel="thumbs">
           <div class="pdf-thumb-grid"></div>
@@ -59,7 +60,7 @@ function ensureRoot() {
         <div class="reader-panel__content" data-panel="search">
           <div class="reader-search-box">
             ${icon('search')}
-            <input type="search" placeholder="Buscar texto en el documento…" class="reader-search-input">
+            <input type="search" placeholder="Buscar texto en el documento…" class="reader-search-input" data-i18n-placeholder="reader_search_placeholder_doc">
           </div>
           <div class="reader-search-results"></div>
         </div>
@@ -74,6 +75,7 @@ function ensureRoot() {
   `;
 
   document.body.appendChild(rootEl);
+  applyTranslations(rootEl);
   wireToolbar();
   return rootEl;
 }
@@ -88,7 +90,7 @@ function wireToolbar() {
     if (!engine) return;
     const next = engine.scrollMode === 'vertical' ? 'horizontal' : 'vertical';
     engine.setScrollMode(next);
-    showToast(next === 'vertical' ? 'Desplazamiento vertical' : 'Desplazamiento horizontal (por página)', 'default', 1600);
+    showToast(next === 'vertical' ? t('toast_scroll_vertical') : t('toast_scroll_horizontal'), 'default', 1600);
   });
 
   rootEl.querySelector('[data-action="fullscreen"]').addEventListener('click', toggleFullscreen);
@@ -99,10 +101,10 @@ function wireToolbar() {
     const existing = await Bookmarks.existsForPage(currentBook.id, page);
     if (existing) {
       await Bookmarks.remove(existing.id);
-      showToast('Marcador eliminado', 'default', 1600);
+      showToast(t('toast_bookmark_removed'), 'default', 1600);
     } else {
       await Bookmarks.add(currentBook.id, page);
-      showToast('Página marcada', 'success', 1600);
+      showToast(t('toast_bookmark_added'), 'success', 1600);
     }
     if (activePanelTab === 'bookmarks') renderBookmarksPanel();
   });
@@ -138,7 +140,7 @@ function toggleFullscreen() {
     document.exitFullscreen();
   } else {
     rootEl.requestFullscreen().catch(() => {
-      showToast('Pantalla completa no disponible en este dispositivo', 'default', 2200);
+      showToast(t('toast_fullscreen_unavailable'), 'default', 2200);
     });
   }
 }
@@ -165,7 +167,7 @@ async function renderBookmarksPanel() {
   const bookmarks = await Bookmarks.listForBook(currentBook.id);
 
   if (bookmarks.length === 0) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-state__icon">${icon('bookmarkAdd')}</div><h3>Sin marcadores</h3><p>Usa el ícono de marcador en la barra superior para guardar esta página.</p></div>`;
+    list.innerHTML = `<div class="empty-state"><div class="empty-state__icon">${icon('bookmarkAdd')}</div><h3>${t('bookmarks_empty_title')}</h3><p>${t('bookmarks_empty_desc')}</p></div>`;
     return;
   }
 
@@ -176,7 +178,7 @@ async function renderBookmarksPanel() {
     row.innerHTML = `
       <div class="bookmark-row__page">${bm.page}</div>
       <div class="bookmark-row__comment">${bm.comment ? escapeHTML(bm.comment) : 'Página ' + bm.page}</div>
-      <button class="bookmark-row__remove" aria-label="Eliminar marcador">${icon('close')}</button>
+      <button class="bookmark-row__remove" aria-label="${t('remove_bookmark')}">${icon('close')}</button>
     `;
     row.addEventListener('click', (e) => {
       if (e.target.closest('.bookmark-row__remove')) return;
@@ -199,7 +201,7 @@ async function runSearch(query) {
   const results = await engine.search(query);
 
   if (results.length === 0) {
-    resultsEl.innerHTML = `<p style="color:var(--color-text-muted);font-size:var(--fs-xs)">Sin resultados para "${escapeHTML(query)}".</p>`;
+    resultsEl.innerHTML = `<p style="color:var(--color-text-muted);font-size:var(--fs-xs)">${t('search_no_results', { query: escapeHTML(query) })}</p>`;
     return;
   }
 
@@ -211,7 +213,7 @@ async function runSearch(query) {
       new RegExp(escapeRegExp(escapeHTML(query)), 'ig'),
       (m) => `<mark>${m}</mark>`
     );
-    el.innerHTML = `<span class="search-result__page">Página ${r.page}</span>${highlighted}`;
+    el.innerHTML = `<span class="search-result__page">${t('search_result_page', { page: r.page })}</span>${highlighted}`;
     el.addEventListener('click', () => engine.goToPage(r.page));
     resultsEl.appendChild(el);
   });
@@ -259,13 +261,13 @@ export async function openPdfReader(book) {
 
   const blob = await LibraryData.getFileBlob(book.id);
   if (!blob) {
-    showToast('No se encontró el archivo original de este libro', 'error', 3000);
+    showToast(t('toast_file_not_found'), 'error', 3000);
     closeReader();
     return;
   }
 
   const viewerEl = el.querySelector('.pdf-viewer');
-  viewerEl.innerHTML = `<div class="empty-state"><div class="empty-state__icon">${icon('book')}</div><h3>Cargando…</h3><p>Preparando "${escapeHTML(book.title)}"</p></div>`;
+  viewerEl.innerHTML = `<div class="empty-state"><div class="empty-state__icon">${icon('book')}</div><h3>${t('loading_title')}</h3><p>${t('loading_preparing', { title: escapeHTML(book.title) })}</p></div>`;
 
   if (engine) engine.destroy();
   engine = new PdfReaderEngine({
@@ -281,7 +283,7 @@ export async function openPdfReader(book) {
     await engine.load(blob, { initialPage: book.progressPage > 0 ? book.progressPage : 1 });
   } catch (err) {
     console.error(err);
-    showToast('No se pudo abrir el PDF', 'error', 3000);
+    showToast(t('toast_pdf_open_error'), 'error', 3000);
     closeReader();
     return;
   }

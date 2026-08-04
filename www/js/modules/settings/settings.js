@@ -1,15 +1,18 @@
 /**
- * settings.js — Preferencias de la aplicación (tema, tipografía, animaciones).
- * Persistidas en el store 'settings' de IndexedDB y aplicadas al <body>.
+ * settings.js — Preferencias de la aplicación (tema y tamaño de fuente de la interfaz).
+ * Persistidas en el store 'settings' de IndexedDB y aplicadas al <html>/<body>.
  */
 
 import DB from '../database/db.js';
 
+export const FONT_SCALE_MIN = 80;
+export const FONT_SCALE_MAX = 160;
+export const FONT_SCALE_STEP = 5;
+
 const DEFAULTS = {
   theme: 'default', // default | amoled | sepia | paper | cyber
-  fontSize: 'md', // sm | md | lg
-  animations: true,
-  readingFont: 'inter',
+  fontScale: 100, // % — escala todo el texto de la interfaz (usa unidades rem)
+  language: 'es', // es | en | fr | pt
 };
 
 export const Settings = {
@@ -38,8 +41,10 @@ export const Settings = {
     if (this.current.theme !== 'default') {
       body.classList.add('theme-' + this.current.theme);
     }
-    body.classList.toggle('no-animations', !this.current.animations);
-    body.dataset.fontSize = this.current.fontSize;
+    // Todas las --fs-* de tokens.css están en rem, así que escalar el tamaño
+    // de fuente raíz reescala proporcionalmente toda la tipografía de la app.
+    document.documentElement.style.fontSize = `${this.current.fontScale}%`;
+    document.documentElement.lang = this.current.language || 'es';
   },
 };
 

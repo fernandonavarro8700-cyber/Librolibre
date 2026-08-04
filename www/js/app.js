@@ -7,7 +7,9 @@
 import DB from './modules/database/db.js';
 import LibraryData from './modules/library/libraryData.js';
 import { renderBookCollection, createBookCard } from './modules/library/libraryUI.js';
-import Settings from './modules/settings/settings.js';
+import Settings, { FONT_SCALE_MIN, FONT_SCALE_MAX, FONT_SCALE_STEP } from './modules/settings/settings.js';
+import { warmupPdfWorker } from './modules/reader/pdfEngine.js';
+import { t, setLanguage, applyTranslations, LANGUAGES } from './modules/i18n/i18n.js';
 import { icon, Icons } from './modules/components/icons.js';
 import { showToast } from './modules/components/toast.js';
 
@@ -19,16 +21,16 @@ const state = {
   sortBy: 'recent',
 };
 
-const SCREEN_TITLES = {
-  home: 'Inicio',
-  library: 'Biblioteca',
-  recent: 'Recientes',
-  favorites: 'Favoritos',
-  categories: 'Categorías',
-  collections: 'Colecciones',
-  stats: 'Estadísticas',
-  settings: 'Configuración',
-  about: 'Acerca de',
+const SCREEN_TITLE_KEYS = {
+  home: 'nav_home',
+  library: 'nav_library',
+  recent: 'nav_recent',
+  favorites: 'nav_favorites',
+  categories: 'nav_categories',
+  collections: 'nav_collections',
+  stats: 'nav_stats',
+  settings: 'nav_settings',
+  about: 'nav_about',
 };
 
 /* ------------------------------------------------------------- ICONOS --- */
@@ -54,7 +56,7 @@ function goToScreen(name) {
   if (screen) screen.classList.add('active');
   if (navItem) navItem.classList.add('active');
 
-  document.getElementById('topbarTitle').textContent = SCREEN_TITLES[name] || '';
+  document.getElementById('topbarTitle').textContent = t(SCREEN_TITLE_KEYS[name] || '');
 
   // Cierra el sidebar en móvil tras navegar
   setMobileSidebarOpen(false);
@@ -103,7 +105,7 @@ async function openBook(book) {
     openComicReader(book);
     return;
   }
-  showToast(`El lector de ${book.format} no está disponible para este formato`, 'default', 2600);
+  showToast(t('toast_format_unavailable', { format: book.format }), 'default', 2600);
 }
 
 /* ------------------------------------------------------------ PANTALLAS - */
@@ -136,10 +138,10 @@ async function renderHome() {
   // KPIs rápidos
   const kpis = document.getElementById('homeKpis');
   kpis.innerHTML = `
-    ${kpiCard(stats.totalBooks, 'Libros en tu biblioteca')}
-    ${kpiCard(stats.booksFinished, 'Terminados')}
-    ${kpiCard(favorites.length, 'Favoritos')}
-    ${kpiCard(stats.streak > 0 ? `${stats.streak} 🔥` : '0', 'Racha de días')}
+    ${kpiCard(stats.totalBooks, t('kpi_total_books'))}
+    ${kpiCard(stats.booksFinished, t('kpi_finished'))}
+    ${kpiCard(favorites.length, t('kpi_favorites'))}
+    ${kpiCard(stats.streak > 0 ? `${stats.streak} 🔥` : '0', t('kpi_streak'))}
   `;
 
   // Favoritos (preview)
@@ -167,7 +169,7 @@ async function renderLibraryScreen() {
   const needed = ['all', ...categories];
   if (currentChips.length !== needed.length) {
     chipsEl.innerHTML = needed
-      .map((c) => `<button class="chip ${c === state.category ? 'is-active' : ''}" data-category="${c}">${c === 'all' ? 'Todas' : escapeHTML(c)}</button>`)
+      .map((c) => `<button class="chip ${c === state.category ? 'is-active' : ''}" data-category="${c}">${c === 'all' ? t('category_all') : escapeHTML(c)}</button>`)
       .join('');
     chipsEl.querySelectorAll('.chip').forEach((chip) => {
       chip.addEventListener('click', () => {
@@ -180,7 +182,7 @@ async function renderLibraryScreen() {
   }
 
   renderLibraryList(all);
-  document.getElementById('libraryCount').textContent = `${all.length} ${all.length === 1 ? 'libro' : 'libros'}`;
+  document.getElementById('libraryCount').textContent = t('library_count', { count: all.length });
 }
 
 function renderLibraryList(all) {
@@ -207,7 +209,7 @@ async function renderCategories() {
   container.innerHTML = '';
 
   if (categories.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-state__icon">${icon('category')}</div><h3>Sin categorías todavía</h3><p>Importa libros para empezar a organizarlos.</p></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-state__icon">${icon('category')}</div><h3>${t('categories_empty_title')}</h3><p>${t('categories_empty_desc')}</p></div>`;
     return;
   }
 
@@ -229,12 +231,12 @@ async function renderStats() {
   const stats = await LibraryData.getStats();
   const kpis = document.getElementById('statsKpis');
   kpis.innerHTML = `
-    ${kpiCard(stats.totalBooks, 'Libros en tu biblioteca')}
-    ${kpiCard(stats.booksFinished, 'Libros terminados')}
-    ${kpiCard(formatDuration(stats.totalReadingMs), 'Tiempo total de lectura')}
-    ${kpiCard(stats.streak > 0 ? `${stats.streak} 🔥` : '0', 'Racha de días seguidos')}
-    ${kpiCard(formatDuration(stats.monthMs), 'Últimos 30 días')}
-    ${kpiCard(stats.topFormat, 'Formato más utilizado')}
+    ${kpiCard(stats.totalBooks, t('kpi_total_books'))}
+    ${kpiCard(stats.booksFinished, t('kpi_finished_full'))}
+    ${kpiCard(formatDuration(stats.totalReadingMs), t('kpi_total_time'))}
+    ${kpiCard(stats.streak > 0 ? `${stats.streak} 🔥` : '0', t('kpi_streak_full'))}
+    ${kpiCard(formatDuration(stats.monthMs), t('kpi_last_30_days'))}
+    ${kpiCard(stats.topFormat, t('kpi_top_format'))}
   `;
 
   renderWeekChart(stats.weekSeries);
@@ -244,7 +246,7 @@ async function renderStats() {
 function renderWeekChart(weekSeries) {
   const el = document.getElementById('weekChart');
   if (!weekSeries || weekSeries.every((d) => d.minutes === 0)) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-state__icon">${icon('clock')}</div><h3>Todavía sin datos</h3><p>Abrí un libro y leé un rato: esta semana se va a ir llenando sola.</p></div>`;
+    el.innerHTML = `<div class="empty-state"><div class="empty-state__icon">${icon('clock')}</div><h3>${t('week_empty_title')}</h3><p>${t('week_empty_desc')}</p></div>`;
     return;
   }
 
@@ -268,13 +270,13 @@ function renderWeekChart(weekSeries) {
 function renderMostReadBook(mostReadBook) {
   const el = document.getElementById('mostReadBook');
   if (!mostReadBook) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-state__icon">${icon('flame')}</div><h3>Todavía no hay favorito</h3><p>El libro en el que pasés más tiempo va a aparecer acá.</p></div>`;
+    el.innerHTML = `<div class="empty-state"><div class="empty-state__icon">${icon('flame')}</div><h3>${t('most_read_empty_title')}</h3><p>${t('most_read_empty_desc')}</p></div>`;
     return;
   }
   el.innerHTML = `
     <div class="kpi-card" style="max-width:360px">
       <div class="kpi-card__value" style="font-size:var(--fs-lg)">${escapeHTML(mostReadBook.title)}</div>
-      <div class="kpi-card__label">${formatDuration(mostReadBook.ms)} de lectura acumulada</div>
+      <div class="kpi-card__label">${formatDuration(mostReadBook.ms)} ${t('kpi_accumulated_reading')}</div>
     </div>
   `;
 }
@@ -349,16 +351,16 @@ function setupImport() {
       try {
         await LibraryData.importFromFile(file);
       } catch (err) {
-        showToast(`No se pudo importar "${file.name}"`, 'error', 3000);
+        showToast(t('toast_import_error', { name: file.name }), 'error', 3000);
         console.error(err);
       }
     }
 
     if (files.length > 0) {
-      showToast(`${files.length} ${files.length === 1 ? 'archivo importado' : 'archivos importados'}`, 'success');
+      showToast(t('toast_import_success', { count: files.length }), 'success');
     }
     if (skipped > 0) {
-      showToast(`${skipped} ${skipped === 1 ? 'archivo no tiene' : 'archivos no tienen'} un formato compatible (PDF, EPUB, CBZ, CBR, TXT, MD, HTML)`, 'error', 3600);
+      showToast(t('toast_import_unsupported', { count: skipped }), 'error', 3600);
     }
 
     fileInput.value = '';
@@ -369,6 +371,26 @@ function setupImport() {
 }
 
 /* ----------------------------------------------------------- SETTINGS --- */
+function buildLanguageChips() {
+  const wrap = document.getElementById('languageChips');
+  wrap.innerHTML = LANGUAGES.map(
+    (l) => `<button class="chip ${l.code === Settings.current.language ? 'is-active' : ''}" data-lang="${l.code}">${l.label}</button>`
+  ).join('');
+
+  wrap.querySelectorAll('.chip').forEach((chip) => {
+    chip.addEventListener('click', async () => {
+      wrap.querySelectorAll('.chip').forEach((c) => c.classList.remove('is-active'));
+      chip.classList.add('is-active');
+      await Settings.set('language', chip.dataset.lang);
+      setLanguage(chip.dataset.lang);
+      applyTranslations();
+      const activeScreen = document.querySelector('.screen.active').id.replace('screen-', '');
+      document.getElementById('topbarTitle').textContent = t(SCREEN_TITLE_KEYS[activeScreen] || '');
+      refreshScreen(activeScreen);
+    });
+  });
+}
+
 function setupSettings() {
   document.querySelectorAll('#themeChips .chip').forEach((chip) => {
     chip.addEventListener('click', async () => {
@@ -378,13 +400,10 @@ function setupSettings() {
     });
   });
 
-  const animToggle = document.getElementById('animToggle');
-  animToggle.addEventListener('click', async () => {
-    const on = !animToggle.classList.contains('is-on');
-    animToggle.classList.toggle('is-on', on);
-    animToggle.setAttribute('aria-checked', String(on));
-    await Settings.set('animations', on);
-  });
+  buildLanguageChips();
+
+  document.getElementById('fontScaleUp').addEventListener('click', () => bumpFontScale(FONT_SCALE_STEP));
+  document.getElementById('fontScaleDown').addEventListener('click', () => bumpFontScale(-FONT_SCALE_STEP));
 
   document.getElementById('exportBtn').addEventListener('click', async () => {
     const data = await DB.exportUserData();
@@ -395,7 +414,7 @@ function setupSettings() {
     a.download = 'librolibre-export.json';
     a.click();
     URL.revokeObjectURL(url);
-    showToast('Exportación generada', 'success');
+    showToast(t('toast_export_done'), 'success');
   });
 }
 
@@ -403,25 +422,45 @@ function reflectSettingsInUI() {
   document.querySelectorAll('#themeChips .chip').forEach((chip) => {
     chip.classList.toggle('is-active', chip.dataset.theme === Settings.current.theme);
   });
-  const animToggle = document.getElementById('animToggle');
-  animToggle.classList.toggle('is-on', Settings.current.animations);
-  animToggle.setAttribute('aria-checked', String(Settings.current.animations));
+  document.querySelectorAll('#languageChips .chip').forEach((chip) => {
+    chip.classList.toggle('is-active', chip.dataset.lang === Settings.current.language);
+  });
+  document.getElementById('fontScaleValue').textContent = `${Settings.current.fontScale}%`;
+}
+
+async function bumpFontScale(delta) {
+  const next = Math.max(FONT_SCALE_MIN, Math.min(FONT_SCALE_MAX, Settings.current.fontScale + delta));
+  await Settings.set('fontScale', next);
+  document.getElementById('fontScaleValue').textContent = `${next}%`;
 }
 
 /* --------------------------------------------------------------- INIT --- */
 async function init() {
-  paintIcons();
-  setupNavigation();
-  setupLibraryToolbar();
-  setupImport();
-  setupSettings();
+  try {
+    paintIcons();
+    setupNavigation();
+    setupLibraryToolbar();
+    setupImport();
+    setupSettings();
 
-  await Settings.load();
-  reflectSettingsInUI();
+    await Settings.load();
+    setLanguage(Settings.current.language);
+    applyTranslations();
+    reflectSettingsInUI();
 
-  await LibraryData.seedIfEmpty();
+    await LibraryData.seedIfEmpty();
 
-  goToScreen('home');
+    warmupPdfWorker();
+
+    goToScreen('home');
+  } finally {
+    hideBootSplash();
+  }
+}
+
+function hideBootSplash() {
+  const splash = document.getElementById('bootSplash');
+  if (splash) splash.classList.add('hidden');
 }
 
 document.addEventListener('DOMContentLoaded', init);

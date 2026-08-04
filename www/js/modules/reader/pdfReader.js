@@ -5,6 +5,7 @@
  */
 
 import { loadPdfDocument } from './pdfEngine.js';
+import { enablePinchZoom } from './pinchZoom.js';
 
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 4;
@@ -33,6 +34,13 @@ export class PdfReaderEngine {
     this.renderedOrder = []; // LRU de páginas renderizadas (modo vertical)
     this.observer = null;
     this._pageChangeTimer = null;
+
+    this._disablePinch = enablePinchZoom(this.viewerEl, {
+      getZoom: () => this.zoom,
+      setZoom: (z) => this.setZoom(z),
+      min: MIN_ZOOM,
+      max: MAX_ZOOM,
+    });
   }
 
   async load(blob, { initialPage = 1, zoom = 1, rotation = 0, scrollMode = 'vertical' } = {}) {
@@ -50,6 +58,7 @@ export class PdfReaderEngine {
 
   destroy() {
     if (this.observer) this.observer.disconnect();
+    if (this._disablePinch) this._disablePinch();
     this.viewerEl.innerHTML = '';
     this.pageWrappers.clear();
     this.renderedOrder = [];

@@ -6,8 +6,14 @@
 import { icon } from '../components/icons.js';
 import LibraryData from './libraryData.js';
 import { showToast } from '../components/toast.js';
+import { t } from '../i18n/i18n.js';
 
-const STATUS_LABEL = { unread: 'No iniciado', reading: 'Leyendo', done: 'Terminado' };
+function statusLabel(status) {
+  if (status === 'reading') return t('status_reading');
+  if (status === 'done') return t('status_done');
+  if (status === 'unread') return t('status_unread');
+  return '';
+}
 
 function coverInnerHTML(book) {
   if (book.cover) {
@@ -51,7 +57,7 @@ export function createBookCard(book, { onOpen, onToggleFavorite } = {}) {
     <div class="book-card__author">${escapeHTML(book.author)}</div>
     <div class="book-card__meta">
       <span class="status-dot ${statusDotClass(book.status)}"></span>
-      <span>${STATUS_LABEL[book.status] || ''}</span>
+      <span>${statusLabel(book.status)}</span>
     </div>
   `;
 
@@ -60,7 +66,7 @@ export function createBookCard(book, { onOpen, onToggleFavorite } = {}) {
     const updated = await LibraryData.toggleFavorite(book.id);
     if (updated) {
       e.currentTarget.classList.toggle('is-fav', updated.favorite);
-      showToast(updated.favorite ? 'Agregado a favoritos' : 'Quitado de favoritos', 'success', 1600);
+      showToast(updated.favorite ? t('toast_favorite_added') : t('toast_favorite_removed'), 'success', 1600);
       onToggleFavorite && onToggleFavorite(updated);
     }
   });
@@ -80,7 +86,7 @@ export function createBookRow(book, { onOpen } = {}) {
     <div class="book-row__cover">${coverInnerHTML(book)}</div>
     <div class="book-row__info">
       <div class="book-row__title">${escapeHTML(book.title)}</div>
-      <div class="book-row__sub">${escapeHTML(book.author)} · ${STATUS_LABEL[book.status] || ''}</div>
+      <div class="book-row__sub">${escapeHTML(book.author)} · ${statusLabel(book.status)}</div>
     </div>
     <div class="book-row__progress">
       <div class="progress-bar"><div class="progress-bar__fill" style="width:${book.progressPercent || 0}%"></div></div>
@@ -131,8 +137,8 @@ function buildEmptyState() {
   el.className = 'empty-state';
   el.innerHTML = `
     <div class="empty-state__icon">${icon('book')}</div>
-    <h3>Sin resultados</h3>
-    <p>No encontramos libros que coincidan con tu búsqueda o filtros actuales.</p>
+    <h3>${t('no_results_title')}</h3>
+    <p>${t('no_results_desc')}</p>
   `;
   return el;
 }

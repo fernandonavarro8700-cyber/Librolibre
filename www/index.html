@@ -16,6 +16,15 @@
 </head>
 <body>
 
+<!-- ========================================================== BOOT SPLASH
+     Se muestra de entrada (HTML/CSS puro, sin esperar a que cargue el JS)
+     y se oculta apenas la app termina de inicializar. -->
+<div id="bootSplash">
+  <img src="assets/icons/icon-512.png" alt="LibroLibre" class="boot-splash__logo">
+  <div class="boot-splash__name">LibroLibre</div>
+  <div class="boot-splash__spinner"></div>
+</div>
+
 <div id="app">
 
   <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
@@ -34,48 +43,48 @@
     <nav class="sidebar__nav" id="sidebarNav" aria-label="Navegación principal">
       <button class="nav-item active" data-screen="home">
         <span class="nav-item__icon" data-icon="library"></span>
-        <span class="nav-item__label">Inicio</span>
+        <span class="nav-item__label" data-i18n="nav_home">Inicio</span>
       </button>
       <button class="nav-item" data-screen="library">
         <span class="nav-item__icon" data-icon="library"></span>
-        <span class="nav-item__label">Biblioteca</span>
+        <span class="nav-item__label" data-i18n="nav_library">Biblioteca</span>
       </button>
       <button class="nav-item" data-screen="recent">
         <span class="nav-item__icon" data-icon="recent"></span>
-        <span class="nav-item__label">Recientes</span>
+        <span class="nav-item__label" data-i18n="nav_recent">Recientes</span>
       </button>
       <button class="nav-item" data-screen="favorites">
         <span class="nav-item__icon" data-icon="favorite"></span>
-        <span class="nav-item__label">Favoritos</span>
+        <span class="nav-item__label" data-i18n="nav_favorites">Favoritos</span>
       </button>
       <button class="nav-item" data-screen="categories">
         <span class="nav-item__icon" data-icon="category"></span>
-        <span class="nav-item__label">Categorías</span>
+        <span class="nav-item__label" data-i18n="nav_categories">Categorías</span>
       </button>
       <button class="nav-item" data-screen="collections">
         <span class="nav-item__icon" data-icon="collection"></span>
-        <span class="nav-item__label">Colecciones</span>
+        <span class="nav-item__label" data-i18n="nav_collections">Colecciones</span>
       </button>
       <button class="nav-item" data-screen="stats">
         <span class="nav-item__icon" data-icon="stats"></span>
-        <span class="nav-item__label">Estadísticas</span>
+        <span class="nav-item__label" data-i18n="nav_stats">Estadísticas</span>
       </button>
 
-      <div class="sidebar__section-label">Sistema</div>
+      <div class="sidebar__section-label" data-i18n="nav_system">Sistema</div>
       <button class="nav-item" data-screen="settings">
         <span class="nav-item__icon" data-icon="settings"></span>
-        <span class="nav-item__label">Configuración</span>
+        <span class="nav-item__label" data-i18n="nav_settings">Configuración</span>
       </button>
       <button class="nav-item" data-screen="about">
         <span class="nav-item__icon" data-icon="info"></span>
-        <span class="nav-item__label">Acerca de</span>
+        <span class="nav-item__label" data-i18n="nav_about">Acerca de</span>
       </button>
     </nav>
 
     <div class="sidebar__footer">
       <button class="sidebar__collapse-btn" id="collapseBtn">
         <span data-icon="chevronLeft"></span>
-        <span class="nav-item__label">Contraer</span>
+        <span class="nav-item__label" data-i18n="nav_collapse">Contraer</span>
       </button>
     </div>
   </aside>
@@ -90,13 +99,13 @@
 
       <div class="topbar__search">
         <span data-icon="search"></span>
-        <input type="search" id="globalSearch" placeholder="Buscar libros, autores…" aria-label="Buscar">
+        <input type="search" id="globalSearch" placeholder="Buscar libros, autores…" aria-label="Buscar" data-i18n-placeholder="search_placeholder">
       </div>
 
       <div class="topbar__actions">
         <button class="btn btn--primary" id="importBtn">
           <span data-icon="upload"></span>
-          <span>Importar</span>
+          <span data-i18n="import_btn">Importar</span>
         </button>
         <input type="file" id="fileInput" accept="*/*" multiple hidden>
       </div>
@@ -110,30 +119,30 @@
 
           <div class="section" id="continueSection">
             <div class="section__head">
-              <h2>Continuar leyendo</h2>
+              <h2 data-i18n="home_continue">Continuar leyendo</h2>
             </div>
             <div class="continue-strip" id="continueStrip"></div>
           </div>
 
           <div class="section">
             <div class="section__head">
-              <h2>Estadísticas rápidas</h2>
+              <h2 data-i18n="home_quick_stats">Estadísticas rápidas</h2>
             </div>
             <div class="kpi-grid" id="homeKpis"></div>
           </div>
 
           <div class="section">
             <div class="section__head">
-              <h2>Favoritos</h2>
-              <button class="section__link" data-goto="favorites">Ver todos</button>
+              <h2 data-i18n="home_favorites">Favoritos</h2>
+              <button class="section__link" data-goto="favorites" data-i18n="see_all">Ver todos</button>
             </div>
             <div class="book-grid" id="homeFavorites" style="--cover-w:130px"></div>
           </div>
 
           <div class="section">
             <div class="section__head">
-              <h2>Toda tu biblioteca</h2>
-              <button class="section__link" data-goto="library">Ver todos</button>
+              <h2 data-i18n="home_library">Toda tu biblioteca</h2>
+              <button class="section__link" data-goto="library" data-i18n="see_all">Ver todos</button>
             </div>
             <div class="book-grid" id="homeLibraryPreview" style="--cover-w:130px"></div>
           </div>
@@ -146,37 +155,37 @@
         <div class="screen__inner">
           <div class="screen__header">
             <div>
-              <h1>Biblioteca</h1>
+              <h1 data-i18n="library_title">Biblioteca</h1>
               <p id="libraryCount">0 libros</p>
             </div>
           </div>
 
           <div class="library-toolbar">
             <div class="chip-row" id="categoryChips">
-              <button class="chip is-active" data-category="all">Todas</button>
+              <button class="chip is-active" data-category="all" data-i18n="category_all">Todas</button>
             </div>
             <div class="select">
               <select id="sortSelect" aria-label="Ordenar por">
-                <option value="recent">Recientes</option>
-                <option value="title">Título</option>
-                <option value="author">Autor</option>
-                <option value="progress">Progreso</option>
+                <option value="recent" data-i18n="sort_recent">Recientes</option>
+                <option value="title" data-i18n="sort_title">Título</option>
+                <option value="author" data-i18n="sort_author">Autor</option>
+                <option value="progress" data-i18n="sort_progress">Progreso</option>
               </select>
             </div>
             <div class="select">
               <select id="statusSelect" aria-label="Filtrar por estado">
-                <option value="all">Todos los estados</option>
-                <option value="unread">No iniciado</option>
-                <option value="reading">Leyendo</option>
-                <option value="done">Terminado</option>
+                <option value="all" data-i18n="status_all">Todos los estados</option>
+                <option value="unread" data-i18n="status_unread">No iniciado</option>
+                <option value="reading" data-i18n="status_reading">Leyendo</option>
+                <option value="done" data-i18n="status_done">Terminado</option>
               </select>
             </div>
             <div class="cover-size-slider">
               <input type="range" id="coverSizeSlider" min="110" max="220" value="160">
             </div>
             <div class="view-toggle">
-              <button class="is-active" data-view="grid" data-icon="grid" aria-label="Vista de cuadrícula"></button>
-              <button data-view="list" data-icon="list" aria-label="Vista de lista"></button>
+              <button class="is-active" data-view="grid" data-icon="grid" aria-label="Vista de cuadrícula" data-i18n-aria="view_grid"></button>
+              <button data-view="list" data-icon="list" aria-label="Vista de lista" data-i18n-aria="view_list"></button>
             </div>
           </div>
 
@@ -187,7 +196,7 @@
       <!-- -------------------------------------------------------- RECENT -->
       <section class="screen" id="screen-recent">
         <div class="screen__inner">
-          <div class="screen__header"><div><h1>Recientes</h1><p>Últimos libros abiertos</p></div></div>
+          <div class="screen__header"><div><h1 data-i18n="recent_title">Recientes</h1><p data-i18n="recent_subtitle">Últimos libros abiertos</p></div></div>
           <div class="book-grid" id="recentContainer" style="--cover-w:160px"></div>
         </div>
       </section>
@@ -195,7 +204,7 @@
       <!-- ----------------------------------------------------- FAVORITES -->
       <section class="screen" id="screen-favorites">
         <div class="screen__inner">
-          <div class="screen__header"><div><h1>Favoritos</h1><p>Tus libros marcados con estrella</p></div></div>
+          <div class="screen__header"><div><h1 data-i18n="favorites_title">Favoritos</h1><p data-i18n="favorites_subtitle">Tus libros marcados con estrella</p></div></div>
           <div class="book-grid" id="favoritesContainer" style="--cover-w:160px"></div>
         </div>
       </section>
@@ -203,7 +212,7 @@
       <!-- ---------------------------------------------------- CATEGORIES -->
       <section class="screen" id="screen-categories">
         <div class="screen__inner">
-          <div class="screen__header"><div><h1>Categorías</h1><p>Tu biblioteca organizada por género</p></div></div>
+          <div class="screen__header"><div><h1 data-i18n="categories_title">Categorías</h1><p data-i18n="categories_subtitle">Tu biblioteca organizada por género</p></div></div>
           <div id="categoriesContainer"></div>
         </div>
       </section>
@@ -211,11 +220,11 @@
       <!-- --------------------------------------------------- COLLECTIONS -->
       <section class="screen" id="screen-collections">
         <div class="screen__inner">
-          <div class="screen__header"><div><h1>Colecciones</h1><p>Agrupa tus libros como quieras</p></div></div>
+          <div class="screen__header"><div><h1 data-i18n="collections_title">Colecciones</h1><p data-i18n="collections_subtitle">Agrupa tus libros como quieras</p></div></div>
           <div class="empty-state">
             <div class="empty-state__icon" data-icon="collection"></div>
-            <h3>Aún no hay colecciones</h3>
-            <p>Las colecciones personalizadas llegarán en una próxima fase del proyecto.</p>
+            <h3 data-i18n="collections_empty_title">Aún no hay colecciones</h3>
+            <p data-i18n="collections_empty_desc">Las colecciones personalizadas llegarán en una próxima fase del proyecto.</p>
           </div>
         </div>
       </section>
@@ -223,16 +232,16 @@
       <!-- -------------------------------------------------------- STATS -->
       <section class="screen" id="screen-stats">
         <div class="screen__inner">
-          <div class="screen__header"><div><h1>Estadísticas</h1><p>Tu actividad de lectura</p></div></div>
+          <div class="screen__header"><div><h1 data-i18n="stats_title">Estadísticas</h1><p data-i18n="stats_subtitle">Tu actividad de lectura</p></div></div>
           <div class="kpi-grid" id="statsKpis"></div>
 
           <div class="section">
-            <div class="section__head"><h2>Esta semana</h2></div>
+            <div class="section__head"><h2 data-i18n="stats_this_week">Esta semana</h2></div>
             <div class="week-chart" id="weekChart"></div>
           </div>
 
           <div class="section">
-            <div class="section__head"><h2>Libro más leído</h2></div>
+            <div class="section__head"><h2 data-i18n="stats_most_read">Libro más leído</h2></div>
             <div id="mostReadBook"></div>
           </div>
         </div>
@@ -241,32 +250,38 @@
       <!-- ----------------------------------------------------- SETTINGS -->
       <section class="screen" id="screen-settings">
         <div class="screen__inner">
-          <div class="screen__header"><div><h1>Configuración</h1><p>Personaliza tu experiencia de lectura</p></div></div>
+          <div class="screen__header"><div><h1 data-i18n="settings_title">Configuración</h1><p data-i18n="settings_subtitle">Personaliza tu experiencia de lectura</p></div></div>
 
           <div class="section">
-            <div class="section__head"><h2>Tema</h2></div>
+            <div class="section__head"><h2 data-i18n="settings_theme">Tema</h2></div>
             <div class="chip-row" id="themeChips">
-              <button class="chip is-active" data-theme="default">Purple Neon</button>
-              <button class="chip" data-theme="amoled">AMOLED</button>
-              <button class="chip" data-theme="sepia">Sepia</button>
-              <button class="chip" data-theme="paper">Papel</button>
-              <button class="chip" data-theme="cyber">Cyber</button>
+              <button class="chip is-active" data-theme="default" data-i18n="theme_default">Purple Neon</button>
+              <button class="chip" data-theme="amoled" data-i18n="theme_amoled">AMOLED</button>
+              <button class="chip" data-theme="sepia" data-i18n="theme_sepia">Sepia</button>
+              <button class="chip" data-theme="paper" data-i18n="theme_paper">Papel</button>
+              <button class="chip" data-theme="cyber" data-i18n="theme_cyber">Cyber</button>
             </div>
           </div>
 
           <div class="section">
-            <div class="section__head"><h2>Preferencias</h2></div>
-            <div class="field" style="display:flex;align-items:center;justify-content:space-between;max-width:360px">
-              <label style="margin:0" for="animToggle">Animaciones</label>
-              <button class="toggle is-on" id="animToggle" role="switch" aria-checked="true"></button>
+            <div class="section__head"><h2 data-i18n="settings_font_size">Tamaño de fuente</h2></div>
+            <div class="stepper" style="max-width:260px">
+              <button id="fontScaleDown" aria-label="Reducir tamaño de fuente">−</button>
+              <span class="stepper__value" id="fontScaleValue">100%</span>
+              <button id="fontScaleUp" aria-label="Aumentar tamaño de fuente">+</button>
             </div>
           </div>
 
           <div class="section">
-            <div class="section__head"><h2>Datos</h2></div>
+            <div class="section__head"><h2 data-i18n="settings_language">Idioma</h2></div>
+            <div class="chip-row" id="languageChips"></div>
+          </div>
+
+          <div class="section">
+            <div class="section__head"><h2 data-i18n="settings_data">Datos</h2></div>
             <button class="btn btn--ghost" id="exportBtn">
               <span data-icon="upload"></span>
-              <span>Exportar notas, marcadores y configuración (JSON)</span>
+              <span data-i18n="settings_export">Exportar notas, marcadores y configuración (JSON)</span>
             </button>
           </div>
         </div>
@@ -275,13 +290,48 @@
       <!-- --------------------------------------------------------- ABOUT -->
       <section class="screen" id="screen-about">
         <div class="screen__inner">
-          <div class="screen__header"><div><h1>Acerca de</h1></div></div>
-          <p style="color:var(--color-text-secondary);max-width:520px;line-height:1.7">
-            LibroLibre es un lector de libros y cómics offline-first construido con HTML5, CSS3
-            y JavaScript vanilla, pensado para empaquetarse con Apache Cordova. Sin frameworks,
-            sin dependencias de UI: cada módulo (biblioteca, lector, base de datos, ajustes) vive
-            de forma independiente para ser fácil de mantener y extender.
-          </p>
+          <div class="screen__header"><div><h1 data-i18n="about_title">Acerca de</h1></div></div>
+
+          <div class="about-card">
+            <h2 class="about-card__title" data-i18n="about_app_name">LibroLibre v1.0</h2>
+            <p class="about-card__desc" data-i18n="about_desc">
+              Gestor personal de lectura de libros y cómics construido en HTML5, CSS3 y
+              JavaScript. Una herramienta gratuita y accesible diseñada para organizar y
+              disfrutar de tus libros en un solo lugar, sin complicaciones.
+            </p>
+            <p class="about-card__version" data-i18n="about_version">Versión: v1.0.0</p>
+
+            <div class="about-card__divider"></div>
+
+            <span class="about-card__label" data-i18n="about_developer">Desarrollador</span>
+            <div class="about-dev">
+              <div class="about-dev__avatar">🧑‍💻</div>
+              <div class="about-dev__info">
+                <div class="about-dev__name">Fernando Navarro</div>
+                <div class="about-dev__role" data-i18n="about_role">Desarrollador</div>
+              </div>
+            </div>
+
+            <div class="about-links">
+              <a class="about-link" href="https://github.com/fernandonavarro8700-cyber" target="_blank" rel="noopener">
+                <span data-icon="github"></span>
+                <span>github.com/fernandonavarro8700-cyber</span>
+              </a>
+              <a class="about-link" href="mailto:fernandonavarro8700@gmail.com">
+                <span data-icon="mail"></span>
+                <span>fernandonavarro8700@gmail.com</span>
+              </a>
+            </div>
+
+            <div class="about-card__divider"></div>
+
+            <span class="about-card__label" data-i18n="about_license">Licencia</span>
+            <p class="about-card__license" data-i18n="about_license_text">
+              MIT License — libre para usar, copiar, modificar y distribuir.
+              Incluye PDF.js (Apache-2.0), epub.js (BSD-2-Clause), JSZip (MIT) y un
+              decodificador RAR en JS puro (MIT).
+            </p>
+          </div>
         </div>
       </section>
 
