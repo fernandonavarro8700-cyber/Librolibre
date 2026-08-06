@@ -26,8 +26,6 @@ const SCREEN_TITLE_KEYS = {
   library: 'nav_library',
   recent: 'nav_recent',
   favorites: 'nav_favorites',
-  categories: 'nav_categories',
-  collections: 'nav_collections',
   stats: 'nav_stats',
   settings: 'nav_settings',
   about: 'nav_about',
@@ -114,7 +112,6 @@ async function refreshScreen(name) {
   if (name === 'library') return renderLibraryScreen();
   if (name === 'recent') return renderRecent();
   if (name === 'favorites') return renderFavorites();
-  if (name === 'categories') return renderCategories();
   if (name === 'stats') return renderStats();
 }
 
@@ -200,31 +197,6 @@ async function renderRecent() {
 async function renderFavorites() {
   const books = await LibraryData.getFavorites();
   renderBookCollection(document.getElementById('favoritesContainer'), books, 'grid', { onOpen: openBook });
-}
-
-async function renderCategories() {
-  const all = await LibraryData.getAll();
-  const categories = await LibraryData.getCategories();
-  const container = document.getElementById('categoriesContainer');
-  container.innerHTML = '';
-
-  if (categories.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-state__icon">${icon('category')}</div><h3>${t('categories_empty_title')}</h3><p>${t('categories_empty_desc')}</p></div>`;
-    return;
-  }
-
-  categories.forEach((cat) => {
-    const books = all.filter((b) => b.category === cat);
-    const section = document.createElement('div');
-    section.className = 'section';
-    section.innerHTML = `<div class="section__head"><h2>${escapeHTML(cat)}</h2></div>`;
-    const grid = document.createElement('div');
-    grid.className = 'book-grid';
-    grid.style.setProperty('--cover-w', '140px');
-    section.appendChild(grid);
-    container.appendChild(section);
-    renderBookCollection(grid, books, 'grid', { onOpen: openBook });
-  });
 }
 
 async function renderStats() {

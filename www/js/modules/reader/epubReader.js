@@ -125,7 +125,35 @@ export class EpubReaderEngine {
   next() { return this.rendition.next(); }
   prev() { return this.rendition.prev(); }
   goToCfi(cfi) { return this.rendition.display(cfi); }
-  goToHref(href) { return this.rendition.display(href); }
+
+  /**
+   * Navega a un item del índice (TOC). Los hrefs del TOC vienen tal cual
+   * figuran en el documento de navegación del EPUB, que puede vivir en una
+   * carpeta distinta a la de los capítulos — epub.js no los resuelve
+   * automáticamente contra la raíz del paquete, así que si la búsqueda
+   * directa falla, se reintenta resolviendo la ruta relativa a la carpeta
+   * del nav/NCX antes de darse por vencido.
+   */
+  goToHref(href) {
+    if (!href) return Promise.resolve();
+
+    const clean = href.split('#')[0];
+    if (this.book.spine.get(clean)) {
+      return this.rendition.display(href);
+    }
+
+    const navPath = this.book.packaging?.navPath || this.book.packaging?.ncxPath;
+    if (navPath) {
+      const navDir = navPath.slice(0, navPath.lastIndexOf('/') + 1);
+      const resolved = normalizeRelativePath(navDir + href);
+      if (this.book.spine.get(resolved.split('#')[0])) {
+        return this.rendition.display(resolved);
+      }
+    }
+
+    // Último intento: dejar que epub.js lo resuelva tal cual, por si acaso.
+    return this.rendition.display(href);
+  }
 
   /* -------------------------------------------------------------- TEMA - */
   _applyTheme() {
@@ -199,6 +227,18 @@ function flattenToc(items, depth = 0) {
     }
   });
   return flat;
+}
+
+/** Colapsa segmentos './' y '../' de una ruta relativa unida a mano. */
+function normalizeRelativePath(path) {
+  const parts = path.split('/');
+  const stack = [];
+  for (const part of parts) {
+    if (part === '.' || part === '') continue;
+    if (part === '..') stack.pop();
+    else stack.push(part);
+  }
+  return stack.join('/');
 }
 
 function findTocLabel(toc, href) {

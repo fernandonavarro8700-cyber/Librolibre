@@ -179,10 +179,15 @@
   font-size: var(--fs-lg);
   font-weight: var(--fw-semibold);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .topbar__search {
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
   max-width: 420px;
   display: flex;
   align-items: center;
@@ -201,6 +206,7 @@
 .topbar__search svg { width: 16px; height: 16px; color: var(--color-text-muted); flex-shrink: 0; }
 .topbar__search input {
   flex: 1;
+  min-width: 0;
   color: var(--color-text);
   font-size: var(--fs-sm);
 }
@@ -211,6 +217,10 @@
   align-items: center;
   gap: var(--space-2);
   margin-left: auto;
+  flex-shrink: 0;
+}
+.topbar__actions .btn span:not(.visually-hidden) {
+  white-space: nowrap;
 }
 
 .main__content {

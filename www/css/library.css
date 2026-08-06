@@ -106,6 +106,7 @@
 .book-card__favorite svg { width: 14px; height: 14px; }
 .book-card__favorite:hover { transform: scale(1.15); }
 .book-card__favorite.is-fav { color: var(--color-warning); }
+.book-card__favorite.is-fav svg { fill: currentColor; }
 
 .book-card__format {
   position: absolute;

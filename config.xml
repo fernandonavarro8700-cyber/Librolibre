@@ -24,6 +24,22 @@
     <preference name="android-targetSdkVersion" value="34" />
     <preference name="AndroidXEnabled" value="true" />
 
+    <!-- Splash nativo: sin esto, cordova-android muestra su logo de fábrica
+         (el pájaro de Apache Cordova) durante el arranque en frío, antes de
+         que cargue el WebView. Con el plugin + estas preferencias se ve
+         nuestro logo desde el primer instante en cualquier versión de Android. -->
+    <plugin name="cordova-plugin-splashscreen" spec="^6.0.0" />
+    <preference name="SplashScreen" value="screen" />
+    <preference name="SplashScreenDelay" value="1500" />
+    <preference name="SplashShowOnlyFirstTime" value="false" />
+    <preference name="SplashMaintainAspectRatio" value="true" />
+    <preference name="FadeSplashScreen" value="true" />
+    <preference name="FadeSplashScreenDuration" value="300" />
+    <!-- Android 12+ usa su propia API de splash nativa (ignora el plugin de arriba). -->
+    <preference name="AndroidWindowSplashScreenBackground" value="#090611" />
+    <preference name="AndroidWindowSplashScreenAnimatedIcon" value="www/assets/icons/icon-512.png" />
+    <preference name="AndroidWindowSplashScreenIconBackgroundColor" value="#090611" />
+
     <platform name="android">
         <!-- Permiso para leer archivos del dispositivo al importar PDF/EPUB/CBZ/CBR. -->
         <config-file target="AndroidManifest.xml" parent="/manifest">
@@ -35,5 +51,18 @@
         <icon density="xhdpi" src="www/assets/icons/icon-xhdpi.png" />
         <icon density="xxhdpi" src="www/assets/icons/icon-xxhdpi.png" />
         <icon density="xxxhdpi" src="www/assets/icons/icon-xxxhdpi.png" />
+
+        <splash density="land-ldpi" src="www/assets/splash/splash-land-ldpi.png" />
+        <splash density="land-mdpi" src="www/assets/splash/splash-land-mdpi.png" />
+        <splash density="land-hdpi" src="www/assets/splash/splash-land-hdpi.png" />
+        <splash density="land-xhdpi" src="www/assets/splash/splash-land-xhdpi.png" />
+        <splash density="land-xxhdpi" src="www/assets/splash/splash-land-xxhdpi.png" />
+        <splash density="land-xxxhdpi" src="www/assets/splash/splash-land-xxxhdpi.png" />
+        <splash density="port-ldpi" src="www/assets/splash/splash-port-ldpi.png" />
+        <splash density="port-mdpi" src="www/assets/splash/splash-port-mdpi.png" />
+        <splash density="port-hdpi" src="www/assets/splash/splash-port-hdpi.png" />
+        <splash density="port-xhdpi" src="www/assets/splash/splash-port-xhdpi.png" />
+        <splash density="port-xxhdpi" src="www/assets/splash/splash-port-xxhdpi.png" />
+        <splash density="port-xxxhdpi" src="www/assets/splash/splash-port-xxxhdpi.png" />
     </platform>
 </widget>

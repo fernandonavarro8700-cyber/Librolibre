@@ -272,7 +272,11 @@ function renderToc() {
     btn.dataset.href = item.href;
     btn.style.paddingLeft = `${12 + item.depth * 14}px`;
     btn.textContent = item.label;
-    btn.addEventListener('click', () => engine.goToHref(item.href));
+    btn.addEventListener('click', () => {
+      engine.goToHref(item.href).catch(() => {
+        showToast(t('toast_chapter_not_found'), 'error', 2400);
+      });
+    });
     list.appendChild(btn);
   });
 }
@@ -396,7 +400,7 @@ export async function openEpubReader(book) {
   try {
     await engine.load(blob, {
       initialCfi: typeof book.progressPage === 'string' ? book.progressPage : null,
-      prefs: { theme: Settings.current.theme },
+      prefs: { theme: Settings.current.theme, fontSize: Settings.current.fontScale },
     });
   } catch (err) {
     console.error(err);
@@ -407,6 +411,7 @@ export async function openEpubReader(book) {
 
   switchPanelTab('toc');
   el.querySelector('.reader-panel').classList.remove('open');
+  rootEl.querySelector('#epubFontSizeValue').textContent = `${engine.prefs.fontSize}%`;
   startSession(book.id);
 }
 

@@ -194,6 +194,7 @@ const dict = {
     font_mono: 'Monoespaciada',
     font_dyslexic: 'Alta legibilidad',
     bookmark_label: 'Marcador',
+    toast_chapter_not_found: 'No se pudo abrir ese capítulo',
   },
 
   en: {
@@ -376,6 +377,7 @@ const dict = {
     font_mono: 'Monospace',
     font_dyslexic: 'High legibility',
     bookmark_label: 'Bookmark',
+    toast_chapter_not_found: 'Could not open that chapter',
   },
 
   fr: {
@@ -558,6 +560,7 @@ const dict = {
     font_mono: 'Monospace',
     font_dyslexic: 'Haute lisibilité',
     bookmark_label: 'Signet',
+    toast_chapter_not_found: "Impossible d'ouvrir ce chapitre",
   },
 
   pt: {
@@ -740,6 +743,7 @@ const dict = {
     font_mono: 'Monoespaçada',
     font_dyslexic: 'Alta legibilidade',
     bookmark_label: 'Marcador',
+    toast_chapter_not_found: 'Não foi possível abrir esse capítulo',
   },
 };
 

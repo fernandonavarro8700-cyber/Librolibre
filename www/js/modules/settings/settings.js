@@ -6,7 +6,7 @@
 import DB from '../database/db.js';
 
 export const FONT_SCALE_MIN = 80;
-export const FONT_SCALE_MAX = 160;
+export const FONT_SCALE_MAX = 140;
 export const FONT_SCALE_STEP = 5;
 
 const DEFAULTS = {

@@ -9,7 +9,7 @@ import { enablePinchZoom } from './pinchZoom.js';
 
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 4;
-const MAX_RENDERED_PAGES = 6; // límite de canvases "vivos" en modo vertical para cuidar memoria
+const MAX_RENDERED_PAGES = 12; // límite de canvases "vivos" en modo vertical para cuidar memoria
 
 export class PdfReaderEngine {
   /**
@@ -106,7 +106,7 @@ export class PdfReaderEngine {
 
     this.observer = new IntersectionObserver((entries) => this._handleIntersect(entries), {
       root: this.viewerEl,
-      rootMargin: '900px 0px',
+      rootMargin: '1600px 0px',
       threshold: 0.01,
     });
     this.pageWrappers.forEach(({ el }) => this.observer.observe(el));
@@ -187,8 +187,11 @@ export class PdfReaderEngine {
     if (this.scrollMode !== 'vertical') return;
     while (this.renderedOrder.length > MAX_RENDERED_PAGES) {
       const oldest = this.renderedOrder.shift();
-      // No liberar la página actual ni sus vecinas inmediatas
-      if (Math.abs(oldest - this.currentPage) <= 1) {
+      // No liberar la página actual ni las 3 vecinas a cada lado: con el
+      // rootMargin generoso del observer, esas páginas suelen estar recién
+      // renderizadas o a punto de entrar en pantalla — desalojarlas creaba
+      // huecos negros visibles durante el scroll rápido.
+      if (Math.abs(oldest - this.currentPage) <= 3) {
         this.renderedOrder.push(oldest); // re-encolar, todavía es "reciente"
         if (this.renderedOrder.length <= MAX_RENDERED_PAGES) break;
         continue;

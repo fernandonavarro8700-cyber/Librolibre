@@ -3,28 +3,6 @@
 Lector de libros y cómics offline-first (HTML5 + CSS3 + JavaScript vanilla,
 preparado para empaquetar con Apache Cordova).
 
-## Generar la APK (GitHub Actions)
-
-Este repo ya viene armado como proyecto Cordova (`config.xml`, `package.json`,
-código de la app dentro de `www/`). Cada vez que subís cambios a la rama `main`,
-el workflow `.github/workflows/build-apk.yml` compila automáticamente una APK.
-
-Para bajarla:
-1. En GitHub, entrá a la pestaña **Actions** del repositorio.
-2. Abrí la ejecución más reciente de **"Build APK"** (ícono verde ✓ = terminó bien).
-3. Al final de la página, en **Artifacts**, vas a ver **`LibroLibre-apk`** — descargalo
-   (te baja un `.zip` que adentro tiene el `app-debug.apk`).
-4. Pasá ese `.apk` a tu celular e instalalo (Android te va a pedir habilitar
-   "instalar apps de fuentes desconocidas" la primera vez).
-
-También podés lanzar el build a mano sin subir cambios: **Actions → Build APK →
-Run workflow**.
-
-> Es una APK de **debug**, sin firmar — perfecta para instalar y probar en tu
-> propio teléfono. Para publicarla en Google Play hace falta firmarla con un
-> keystore de release, que es un paso aparte (dejalo para más adelante si
-> llegás a necesitarlo).
-
 ## Qué incluye hasta ahora
 
 **Fase 1 — Arquitectura y biblioteca**

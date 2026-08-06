@@ -340,43 +340,19 @@ export const LibraryData = {
   },
 
   /** Siembra datos de demostración solo si la biblioteca está vacía (primer arranque). */
+  /**
+   * Ya no se siembran libros de ejemplo (Sombras del Vacío, El Último
+   * Cartógrafo, etc.) — la biblioteca arranca vacía de verdad. Este método
+   * se mantiene por compatibilidad con el arranque de la app, pero ahora
+   * solo limpia cualquier libro de ejemplo que haya quedado de una versión
+   * anterior (se identifican porque nunca tuvieron un archivo real: fileSize 0).
+   */
   async seedIfEmpty() {
     const existing = await DB.getAll(DB.STORES.BOOKS);
-    if (existing.length > 0) return;
-
-    const demo = [
-      { title: 'Sombras del Vacío', author: 'M. Reyes', format: 'EPUB', category: 'Ciencia ficción', progressPercent: 62, status: 'reading' },
-      { title: 'El Último Cartógrafo', author: 'I. Salas', format: 'PDF', category: 'Aventura', progressPercent: 100, status: 'done' },
-      { title: 'Crónicas de Neón', author: 'D. Vega', format: 'CBZ', category: 'Cómic', progressPercent: 18, status: 'reading' },
-      { title: 'Susurros de Papel', author: 'C. Marín', format: 'TXT', category: 'Poesía', progressPercent: 0, status: 'unread' },
-      { title: 'Antología Nocturna', author: 'Varios', format: 'CBR', category: 'Cómic', progressPercent: 45, status: 'reading' },
-      { title: 'La Casa sin Puertas', author: 'R. Duarte', format: 'EPUB', category: 'Misterio', progressPercent: 0, status: 'unread' },
-    ];
-
-    const now = Date.now();
-    const rows = demo.map((d, i) => {
-      const [a, b] = gradientFor(d.title);
-      return {
-        id: uid(),
-        title: d.title,
-        author: d.author,
-        format: d.format,
-        pages: 220 + i * 15,
-        progressPage: Math.round((d.progressPercent / 100) * (220 + i * 15)),
-        progressPercent: d.progressPercent,
-        category: d.category,
-        favorite: i % 3 === 0,
-        status: d.status,
-        cover: null,
-        coverGradient: [a, b],
-        fileName: d.title + '.' + d.format.toLowerCase(),
-        fileSize: 0,
-        dateAdded: now - i * 86400000,
-        lastOpened: d.status !== 'unread' ? now - i * 3600000 : null,
-      };
-    });
-
-    await DB.putMany(DB.STORES.BOOKS, rows);
+    const leftoverDemos = existing.filter((b) => b.fileSize === 0 && !b.cover);
+    if (leftoverDemos.length > 0) {
+      await Promise.all(leftoverDemos.map((b) => this.remove(b.id)));
+    }
   },
 };
 
