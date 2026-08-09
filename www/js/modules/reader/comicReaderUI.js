@@ -31,8 +31,6 @@ function ensureRoot() {
       <button class="btn btn--icon" data-action="close" aria-label="Cerrar lector" data-i18n-aria="reader_close">${icon('chevronLeft')}</button>
       <div class="reader-toolbar__title"></div>
       <div class="reader-toolbar__group">
-        <button class="btn btn--icon" data-action="zoomOut" data-tooltip="Alejar" data-i18n-tooltip="reader_zoom_out">${icon('zoomOut')}</button>
-        <button class="btn btn--icon" data-action="zoomIn" data-tooltip="Acercar" data-i18n-tooltip="reader_zoom_in">${icon('zoomIn')}</button>
         <button class="btn btn--icon" data-action="scrollMode" data-tooltip="Modo de desplazamiento" data-i18n-tooltip="reader_scroll_mode">${icon('layout')}</button>
         <button class="btn btn--icon" data-action="doublePage" data-tooltip="Doble página" data-i18n-tooltip="reader_double_page">${icon('spread')}</button>
         <button class="btn btn--icon" data-action="fullscreen" data-tooltip="Pantalla completa" data-i18n-tooltip="reader_fullscreen">${icon('fullscreen')}</button>
@@ -77,8 +75,6 @@ function ensureRoot() {
 
 function wireToolbar() {
   rootEl.querySelector('[data-action="close"]').addEventListener('click', closeReader);
-  rootEl.querySelector('[data-action="zoomIn"]').addEventListener('click', () => engine && engine.zoomIn());
-  rootEl.querySelector('[data-action="zoomOut"]').addEventListener('click', () => engine && engine.zoomOut());
 
   rootEl.querySelector('[data-action="scrollMode"]').addEventListener('click', () => {
     if (!engine) return;

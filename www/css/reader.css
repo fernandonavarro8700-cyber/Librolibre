@@ -68,7 +68,7 @@
   background: #050308;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   padding: var(--space-6) var(--space-4) var(--space-12);
   gap: var(--space-4);
 }
@@ -89,6 +89,11 @@
   border-radius: 4px;
   overflow: hidden;
   flex-shrink: 0;
+  /* margin:auto (no align-items:center en el padre) es lo que permite que,
+     al hacer zoom y la página quede más ancha que la pantalla, se pueda
+     desplazar completa hacia ambos lados — con align-items:center el
+     desborde solo se podía alcanzar de un lado. */
+  margin: 0 auto;
 }
 .pdf-page canvas { display: block; width: 100%; height: 100%; }
 
@@ -106,6 +111,7 @@
   transition: transform var(--duration-base) var(--ease-standard);
   position: absolute;
   right: 0; top: 0; bottom: 0;
+  z-index: 10;
 }
 .reader-panel.open { transform: translateX(0); position: relative; }
 
@@ -330,7 +336,7 @@
   background: #050308;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   padding: var(--space-4);
   gap: var(--space-3);
 }
@@ -345,7 +351,8 @@
 
 .comic-page {
   --comic-zoom: 1;
-  max-width: calc(100% * var(--comic-zoom));
+  width: calc(100% * var(--comic-zoom));
+  max-width: none;
   flex-shrink: 0;
   border-radius: 4px;
   overflow: hidden;
@@ -353,6 +360,7 @@
   background: #12091f;
   min-height: 80px;
   display: flex;
+  margin: 0 auto;
 }
 .comic-page img {
   width: 100%;
