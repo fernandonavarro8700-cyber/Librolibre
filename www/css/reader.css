@@ -71,6 +71,7 @@
   align-items: stretch;
   padding: var(--space-6) var(--space-4) var(--space-12);
   gap: var(--space-4);
+  touch-action: pan-y;
 }
 
 .pdf-viewer--horizontal {
@@ -252,6 +253,8 @@
   min-width: 0;
   background: var(--color-bg);
   position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 .epub-viewer iframe { background: transparent; }
 
@@ -339,6 +342,7 @@
   align-items: stretch;
   padding: var(--space-4);
   gap: var(--space-3);
+  touch-action: pan-y;
 }
 
 .comic-viewer--horizontal {

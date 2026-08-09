@@ -64,8 +64,9 @@ export class EpubReaderEngine {
     this.rendition = this.book.renderTo(this.viewerEl, {
       width: '100%',
       height: '100%',
-      flow: 'paginated',
-      spread: 'auto',
+      flow: 'scrolled-doc',
+      manager: 'continuous',
+      allowScriptedContent: false,
     });
 
     this._applyTheme();
