@@ -135,25 +135,33 @@ export class EpubReaderEngine {
    * directa falla, se reintenta resolviendo la ruta relativa a la carpeta
    * del nav/NCX antes de darse por vencido.
    */
-  goToHref(href) {
-    if (!href) return Promise.resolve();
+  async goToHref(href) {
+    if (!href) return;
 
-    const clean = href.split('#')[0];
-    if (this.book.spine.get(clean)) {
-      return this.rendition.display(href);
-    }
+    const [, fragment] = href.split('#');
+    let target = href;
 
-    const navPath = this.book.packaging?.navPath || this.book.packaging?.ncxPath;
-    if (navPath) {
-      const navDir = navPath.slice(0, navPath.lastIndexOf('/') + 1);
-      const resolved = normalizeRelativePath(navDir + href);
-      if (this.book.spine.get(resolved.split('#')[0])) {
-        return this.rendition.display(resolved);
+    if (!this.book.spine.get(href.split('#')[0])) {
+      const navPath = this.book.packaging?.navPath || this.book.packaging?.ncxPath;
+      if (navPath) {
+        const navDir = navPath.slice(0, navPath.lastIndexOf('/') + 1);
+        const resolved = normalizeRelativePath(navDir + href);
+        if (this.book.spine.get(resolved.split('#')[0])) target = resolved;
       }
     }
 
-    // Último intento: dejar que epub.js lo resuelva tal cual, por si acaso.
-    return this.rendition.display(href);
+    await this.rendition.display(target);
+
+    // En modo scroll continuo, si la sección ya estaba cargada (varios
+    // capítulos comparten un mismo archivo interno, algo común en EPUBs
+    // convertidos desde Word/Wattpad), epub.js a veces no se desplaza al
+    // ancla puntual del capítulo. Lo forzamos a mano como respaldo.
+    if (fragment) {
+      this.rendition.getContents().forEach((content) => {
+        const el = content.document && content.document.getElementById(fragment);
+        if (el) el.scrollIntoView({ behavior: 'auto', block: 'start' });
+      });
+    }
   }
 
   /* -------------------------------------------------------------- TEMA - */

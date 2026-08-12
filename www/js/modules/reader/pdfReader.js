@@ -43,17 +43,40 @@ export class PdfReaderEngine {
     });
   }
 
-  async load(blob, { initialPage = 1, zoom = 1, rotation = 0, scrollMode = 'vertical' } = {}) {
+  async load(blob, { initialPage = 1, zoom = null, rotation = 0, scrollMode = 'vertical' } = {}) {
     this.pdfDoc = await loadPdfDocument(blob);
     this.numPages = this.pdfDoc.numPages;
-    this.zoom = clamp(zoom, MIN_ZOOM, MAX_ZOOM);
     this.rotation = normalizeRotation(rotation);
     this.scrollMode = scrollMode;
     this.currentPage = clamp(initialPage, 1, this.numPages);
 
+    const initialZoom = zoom != null ? zoom : await this._computeFitWidthZoom();
+    this.zoom = clamp(initialZoom, MIN_ZOOM, MAX_ZOOM);
+    this.fitWidthZoom = this.zoom;
+
     await this._buildLayout();
     this.onReady(this.numPages);
     this.goToPage(this.currentPage, { smooth: false });
+  }
+
+  /**
+   * Calcula el zoom para que la página ocupe el ancho disponible del visor.
+   * Sin esto, PDFs con tamaño de página estándar (carta/A4, ~612pt de ancho
+   * a escala 1) quedan más anchos que la pantalla y el texto se corta a la
+   * derecha, en vez de arrancar ya ajustado como cualquier lector de PDF.
+   */
+  async _computeFitWidthZoom() {
+    try {
+      const page = await this.pdfDoc.getPage(1);
+      const baseViewport = page.getViewport({ scale: 1, rotation: this.rotation });
+      const styles = window.getComputedStyle(this.viewerEl);
+      const paddingX = parseFloat(styles.paddingLeft || '0') + parseFloat(styles.paddingRight || '0');
+      const available = this.viewerEl.clientWidth - paddingX;
+      if (!available || !baseViewport.width) return 1;
+      return available / baseViewport.width;
+    } catch (err) {
+      return 1;
+    }
   }
 
   destroy() {
@@ -241,7 +264,8 @@ export class PdfReaderEngine {
 
   /** Zoom por doble toque: alterna entre ajuste normal (1x) y acercado (2.2x). */
   toggleDoubleTapZoom() {
-    return this.setZoom(this.zoom > 1.4 ? 1 : 2.2);
+    const base = this.fitWidthZoom || 1;
+    return this.setZoom(this.zoom > base * 1.3 ? base : base * 2.2);
   }
 
   /* ---------------------------------------------------------- ROTACIÓN - */
